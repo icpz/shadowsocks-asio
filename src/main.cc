@@ -33,7 +33,19 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    Socks5ProxyServer s(ctx, port);
+    Socks5ProxyServer server(ctx, port);
+
+    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
+
+    signals.async_wait(
+        [&server](boost::system::error_code ec, int sig) {
+            if (ec == boost::asio::error::operation_aborted) {
+                return;
+            }
+            LOG(INFO) << "Signal: " << sig << " received";
+            server.stop();
+        }
+    );
 
     ctx.run();
 

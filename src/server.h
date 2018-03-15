@@ -15,13 +15,20 @@ public:
     Socks5ProxyServer(boost::asio::io_context &ctx, uint16_t port)
         : acceptor_(ctx, tcp::endpoint(tcp::v4(), port)) {
         LOG(INFO) << "Server running at " << acceptor_.local_endpoint();
+        running_ = true;
         DoAccept();
+    }
+
+    void stop() {
+        acceptor_.cancel();
+        running_ = false;
     }
 
 private:
     void DoAccept();
 
     tcp::acceptor acceptor_;
+    bool running_;
 };
 
 #endif

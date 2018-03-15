@@ -351,6 +351,8 @@ void Socks5ProxyServer::DoAccept() {
             LOG(INFO) << "A new client accepted: " << socket.remote_endpoint();
             std::make_shared<Session>(std::move(socket))->Start();
         }
-        DoAccept();
+        if (running_) {
+            DoAccept();
+        }
     });
 }
