@@ -7,30 +7,37 @@
 
 #include "server.h"
 
-#define MAX_LENGTH 8192
-
 using boost::asio::ip::tcp;
 
 class Session : public std::enable_shared_from_this<Session> {
     struct Peer {
-        Peer(tcp::socket socket, size_t len)
-            : socket(std::move(socket)), buf(len) {
+        Peer(tcp::socket socket, size_t ttl)
+            : socket(std::move(socket)),
+              ttl(ttl),
+              timer(socket.get_executor().context()) {
         }
 
-        Peer(boost::asio::io_context &ctx, size_t len)
-            : socket(ctx), buf(len) {
+        Peer(boost::asio::io_context &ctx, size_t ttl)
+            : socket(ctx), ttl(ttl), timer(ctx) {
+        }
+
+        void CancelAll() {
+            socket.cancel();
+            timer.cancel();
         }
 
         tcp::socket socket;
         Buffer buf;
+        boost::posix_time::millisec ttl;
+        boost::asio::deadline_timer timer;
     };
 
 public:
 
-    Session(tcp::socket socket)
+    Session(tcp::socket socket, size_t ttl = 5000)
         : context(socket.get_executor().context()),
-          client_(std::move(socket), MAX_LENGTH),
-          remote_(context, MAX_LENGTH),
+          client_(std::move(socket), ttl),
+          remote_(context, ttl),
           resolver_(context) {
     }
 
@@ -57,6 +64,7 @@ private:
                     LOG(WARNING) << "Error: " << ec; 
                     return;
                 }
+                client_.timer.cancel();
                 client_.buf.Append(len);
                 auto *hdr = (socks5::MethodSelectionMessageHeader *)(client_.buf.get_data());
                 if (hdr->ver != socks5::VERSION) {
@@ -68,6 +76,7 @@ private:
                 if (need_more) {
                     LOG(TRACE) << "need more data, current: " << client_.buf.Size()
                                << "excepted more: " << need_more;
+                    client_.buf.PrepareCapacity(need_more);
                     DoReadSocks5MethodSelectionMessage();
                     return;
                 }
@@ -82,6 +91,7 @@ private:
                 DoWriteSocks5MethodSelectionReply(method_selected);
             }
         );
+        TimerAgain(client_);
     }
 
     void DoWriteSocks5MethodSelectionReply(uint8_t method) {
@@ -97,12 +107,14 @@ private:
                     LOG(WARNING) << "Unexcepted error: " << ec;
                     return;
                 }
+                client_.timer.cancel();
                 client_.buf.Reset();
                 if (method == socks5::NO_AUTH_METHOD) {
                     DoReadSocks5Request();
                 }
             }
         );
+        TimerAgain(client_);
     }
 
     void DoReadSocks5Request(size_t at_least = 4) {
@@ -116,11 +128,13 @@ private:
                     LOG(WARNING) << "Unexcepted error: " << ec;
                     return;
                 }
+                client_.timer.cancel();
                 client_.buf.Append(len);
                 size_t need_more = socks5::Request::NeedMore(client_.buf.get_data(),
                                                              client_.buf.Size());
                 if (need_more) {
                     LOG(TRACE) << "Need more data: " << need_more;
+                    client_.buf.PrepareCapacity(need_more);
                     DoReadSocks5Request(need_more);
                     return;
                 }
@@ -171,6 +185,7 @@ private:
                 DoResolveRemote(std::move(address), std::move(port));
             }
         );
+        TimerAgain(client_);
     }
 
     void DoResolveRemote(std::string host, std::string port) {
@@ -199,9 +214,11 @@ private:
                     return;
                 }
                 LOG(DEBUG) << "Connected to remote " << itr->host_name();
+                client_.timer.cancel();
                 DoWriteSocks5Reply(socks5::SUCCEEDED_REP);
             }
         );
+        TimerAgain(client_);
     }
 
     void DoWriteSocks5Reply(uint8_t reply) {
@@ -220,11 +237,13 @@ private:
                 }
                 if (reply == socks5::SUCCEEDED_REP) {
                     LOG(TRACE) << "Start streaming";
+                    client_.timer.cancel();
                     client_.buf.Reset();
                     StartStream();
                 }
             }
         );
+        TimerAgain(client_);
     }
 
     void StartStream() {
@@ -240,23 +259,53 @@ private:
                 if (ec) {
                     if (ec == boost::asio::error::misc_errors::eof) {
                         LOG(TRACE) << "Stream terminates normally";
+                        src.CancelAll();
+                        dest.CancelAll();
+                        return;
+                    } else if (ec == boost::asio::error::operation_aborted) {
+                        LOG(DEBUG) << "Read operation canceled";
                         return;
                     }
-                    LOG(WARNING) << "Unexcepted error: " << ec;
+                    LOG(WARNING) << "Relay read unexcepted error: " << ec;
+                    return;
                 }
+                src.timer.cancel();
                 src.buf.Reset(len);
                 boost::asio::async_write(dest.socket,
                     src.buf.get_const_buffer(),
                     [this, self, &src, &dest](boost::system::error_code ec, size_t len) {
                         if (ec) {
-                            LOG(WARNING) << "Unexcepted error: " << ec;
+                            if (ec == boost::asio::error::operation_aborted) {
+                                LOG(DEBUG) << "Write operation canceled";
+                                return;
+                            }
+                            LOG(WARNING) << "Relay write unexcepted error: " << ec;
                             return;
                         }
                         src.buf.Reset();
                         DoRelayStream(src, dest);
+                        TimerAgain(src);
                     }
                 );
             }
+        );
+    }
+
+    void TimerExpiredCallBack(Peer &peer, boost::system::error_code ec) {
+        if (ec != boost::asio::error::operation_aborted) {
+            LOG(DEBUG) << peer.socket.remote_endpoint() << " TTL expired";
+            peer.socket.close();
+        }
+    }
+
+    void TimerAgain(Peer &peer) {
+        auto self(shared_from_this());
+        peer.timer.expires_from_now(peer.ttl);
+        peer.timer.async_wait(
+            std::bind(&Session::TimerExpiredCallBack,
+                      self, std::ref(peer),
+                      std::placeholders::_1
+            )
         );
     }
 

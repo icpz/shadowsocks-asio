@@ -14,6 +14,7 @@ class Socks5ProxyServer {
 public:
     Socks5ProxyServer(boost::asio::io_context &ctx, uint16_t port)
         : acceptor_(ctx, tcp::endpoint(tcp::v4(), port)) {
+        LOG(INFO) << "Server running at " << acceptor_.local_endpoint();
         DoAccept();
     }
 

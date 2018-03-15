@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <algorithm>
 #include <boost/asio.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -10,8 +11,8 @@
 
 class Buffer {
 public:
-    Buffer(size_t max_length)
-        : buf_(max_length), curr_(0) {
+    Buffer(size_t max_length = 8192)
+        : buf_(std::max(1024UL, max_length)), curr_(0) {
     }
 
     void DeQueue(size_t len) {
@@ -34,6 +35,19 @@ public:
 
     size_t Size() const {
         return curr_;
+    }
+
+    void PrepareCapacity(size_t more_length) {
+        size_t total = Size() + more_length;
+        if (total > buf_.size()) {
+            ExpandCapacity(total);
+        }
+    }
+
+    void ExpandCapacity(size_t new_capacity) {
+        if (buf_.size() < new_capacity) {
+            buf_.resize(new_capacity);
+        }
     }
 
     boost::asio::mutable_buffer get_buffer() {
