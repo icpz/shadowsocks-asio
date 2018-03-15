@@ -21,6 +21,10 @@ public:
           client_buf_(MAX_LENGTH), remote_buf_(MAX_LENGTH) {
     }
 
+    ~Session() {
+        LOG(TRACE) << "Session completed: " << client_socket_.remote_endpoint();
+    }
+
     void Start() {
         LOG(TRACE) << "Start read method selection message";
         DoReadSocks5MethodSelectionMessage();

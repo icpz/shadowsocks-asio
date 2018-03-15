@@ -8,6 +8,7 @@ add_definitions(-DBOOST_ALL_DYN_LINK)
 list(APPEND BOOST_DEPS
      boost_log-mt
      boost_thread-mt
+     boost_program_options-mt
      boost_system-mt
     )
 
