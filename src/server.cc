@@ -8,6 +8,7 @@
 #include "server.h"
 
 using boost::asio::ip::tcp;
+namespace bsys = boost::system;
 
 class Session : public std::enable_shared_from_this<Session> {
     struct Peer {
@@ -34,11 +35,11 @@ class Session : public std::enable_shared_from_this<Session> {
 
 public:
 
-    Session(tcp::socket socket, size_t ttl = 5000)
+    Session(tcp::socket socket, std::unique_ptr<BasicProtocol> protocol, size_t ttl = 5000)
         : context(socket.get_executor().context()),
           client_(std::move(socket), ttl),
           remote_(context, ttl),
-          resolver_(context) {
+          resolver_(context), protocol_(std::move(protocol)) {
     }
 
     ~Session() {
@@ -46,7 +47,8 @@ public:
     }
 
     void Start() {
-        LOG(TRACE) << "Start read method selection message";
+        LOG(TRACE) << "Session start: " << client_.socket.remote_endpoint()
+                   << ", reading method selection message";
         DoReadSocks5MethodSelectionMessage();
     }
 
@@ -55,7 +57,7 @@ private:
         auto self(shared_from_this());
         client_.socket.async_read_some(
             client_.buf.get_buffer(),
-            [this, self](boost::system::error_code ec, size_t len) {
+            [this, self](bsys::error_code ec, size_t len) {
                 if (ec) {
                     if (ec == boost::asio::error::misc_errors::eof) {
                         LOG(TRACE) << "Got EOF";
@@ -102,7 +104,7 @@ private:
         client_.buf.Reset(2);
         boost::asio::async_write(
             client_.socket, client_.buf.get_const_buffer(),
-            [this, self, method](boost::system::error_code ec, size_t len) {
+            [this, self, method](bsys::error_code ec, size_t len) {
                 if (ec) {
                     LOG(WARNING) << "Unexcepted error: " << ec;
                     return;
@@ -123,7 +125,7 @@ private:
             client_.socket,
             client_.buf.get_buffer(),
             boost::asio::transfer_at_least(at_least),
-            [this, self](boost::system::error_code ec, size_t len) {
+            [this, self](bsys::error_code ec, size_t len) {
                 if (ec) {
                     LOG(WARNING) << "Unexcepted error: " << ec;
                     return;
@@ -143,50 +145,23 @@ private:
                     LOG(WARNING) << "Unsupport socks version: " << (uint32_t)hdr->ver;
                     return;
                 }
-                if (hdr->cmd != socks5::CONNECT_CMD) {
-                    LOG(DEBUG) << "Unsupport command: " << hdr->cmd;
-                    DoWriteSocks5Reply(socks5::CMD_NOT_SUPPORTED_REP);
+
+                uint8_t reply = protocol_->ParseHeader(client_.buf);
+
+                if (reply != socks5::SUCCEEDED_REP) {
+                    LOG(WARNING) << "Unsuccessful reply: " << (uint32_t)reply;
+                    DoWriteSocks5Reply(reply);
                     return;
                 }
 
-                std::string address_str;
                 boost::asio::ip::address address;
-                size_t port_offset;
-                bool need_resolve = false;
-                switch(hdr->atype) {
-                case socks5::IPV4_ATYPE:
-                    std::array<uint8_t, 4> ipv4_buf;
-                    port_offset = ipv4_buf.size();
-                    std::copy_n(&hdr->variable_field[0], port_offset, std::begin(ipv4_buf));
-                    address = boost::asio::ip::make_address_v4(ipv4_buf);
-                    break;
-
-                case socks5::DOMAIN_ATYPE:
-                    need_resolve = true;
-                    port_offset = hdr->variable_field[0];
-                    std::copy_n(&hdr->variable_field[1], port_offset,
-                                std::back_inserter(address_str));
-                    port_offset += 1;
-                    break;
-
-                case socks5::IPV6_ATYPE:
-                    std::array<uint8_t, 16> ipv6_buf;
-                    port_offset = ipv6_buf.size();
-                    std::copy_n(&hdr->variable_field[0], port_offset, std::begin(ipv6_buf));
-                    address = boost::asio::ip::make_address_v6(ipv6_buf);
-                    break;
-
-                default:
-                    LOG(DEBUG) << "Unsupport address type: " << hdr->atype;
-                    DoWriteSocks5Reply(socks5::ATYPE_NOT_SUPPORTED_REP);
-                    return;
-                }
-                uint16_t port = boost::endian::big_to_native(*(uint16_t *)(&hdr->variable_field[port_offset]));
-                if (need_resolve) {
-                    LOG(TRACE) << "Resolving to " << address_str << ":" << port;
-                    DoResolveRemote(std::move(address_str), std::to_string(port));
+                if (protocol_->NeedResolve()) {
+                    std::string hostname, port;
+                    protocol_->GetResolveArgs(hostname, port);
+                    LOG(TRACE) << "Resolving to " << hostname << ":" << port;
+                    DoResolveRemote(std::move(hostname), std::move(port));
                 } else {
-                    tcp::endpoint ep(address, port);
+                    tcp::endpoint ep = protocol_->GetEndpoint();
                     LOG(TRACE) << "Connecting to " << ep;
                     DoConnectRemote(ep);
                 }
@@ -198,7 +173,7 @@ private:
     void DoResolveRemote(std::string host, std::string port) {
         auto self(shared_from_this());
         resolver_.async_resolve(host, port,
-            [this, self](boost::system::error_code ec, tcp::resolver::iterator itr) {
+            [this, self](bsys::error_code ec, tcp::resolver::iterator itr) {
                 if (ec) {
                     LOG(DEBUG) << "Unable to resolve: " << ec;
                     DoWriteSocks5Reply(socks5::HOST_UNREACHABLE_REP);
@@ -212,7 +187,7 @@ private:
     void DoConnectRemote(tcp::resolver::iterator itr) {
         auto self(shared_from_this());
         boost::asio::async_connect(remote_.socket, itr,
-            [this, self](boost::system::error_code ec, tcp::resolver::iterator itr) {
+            [this, self](bsys::error_code ec, tcp::resolver::iterator itr) {
                 if (ec || itr == tcp::resolver::iterator()) {
                     LOG(DEBUG) << "Cannot connect to remote: " << ec;
                     DoWriteSocks5Reply((itr == tcp::resolver::iterator()
@@ -231,7 +206,7 @@ private:
     void DoConnectRemote(tcp::endpoint ep) {
         auto self(shared_from_this());
         boost::asio::async_connect(remote_.socket, std::array<tcp::endpoint, 1>{ ep },
-            [this, self](boost::system::error_code ec, tcp::endpoint ep) {
+            [this, self](bsys::error_code ec, tcp::endpoint ep) {
                 if (ec) {
                     if (ec == boost::asio::error::operation_aborted) {
                         LOG(DEBUG) << "Connect canceled";
@@ -260,7 +235,7 @@ private:
                 socks5::Reply::FillBoundAddress(client_.buf.get_data(),
                                                 remote_.socket.local_endpoint()));
         boost::asio::async_write(client_.socket, client_.buf.get_const_buffer(),
-            [this, self, reply](boost::system::error_code ec, size_t len) {
+            [this, self, reply](bsys::error_code ec, size_t len) {
                 if (ec) {
                     LOG(WARNING) << "Unexcepted write error " << ec;
                     return;
@@ -269,7 +244,10 @@ private:
                     LOG(TRACE) << "Start streaming";
                     client_.timer.cancel();
                     client_.buf.Reset();
-                    StartStream();
+                    protocol_->DoInitializeProtocol(
+                        remote_.socket,
+                        std::bind(&Session::StartStream, self)
+                    );
                 }
             }
         );
@@ -277,15 +255,22 @@ private:
     }
 
     void StartStream() {
-        DoRelayStream(client_, remote_);
-        DoRelayStream(remote_, client_);
+        DoRelayStream(client_, remote_,
+                      std::bind(&BasicProtocol::Wrap,
+                                std::ref(protocol_),
+                                std::placeholders::_1));
+        DoRelayStream(remote_, client_,
+                      std::bind(&BasicProtocol::UnWrap,
+                                std::ref(protocol_),
+                                std::placeholders::_1));
     }
 
-    void DoRelayStream(Peer &src, Peer &dest) {
+    void DoRelayStream(Peer &src, Peer &dest, BasicProtocol::wrap_function wrapper) {
         auto self(shared_from_this());
         src.socket.async_read_some(
             src.buf.get_buffer(),
-            [this, self, &src, &dest](boost::system::error_code ec, size_t len) {
+            [this, self, &src, &dest,
+             wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
                 if (ec) {
                     if (ec == boost::asio::error::misc_errors::eof) {
                         LOG(TRACE) << "Stream terminates normally";
@@ -300,10 +285,18 @@ private:
                     return;
                 }
                 src.timer.cancel();
-                src.buf.Reset(len);
+                src.buf.Append(len);
+                size_t valid_length = wrapper(src.buf);
+                if (valid_length == 0) { // need more
+                    DoRelayStream(src, dest, std::move(wrapper));
+                    return;
+                }
                 boost::asio::async_write(dest.socket,
                     src.buf.get_const_buffer(),
-                    [this, self, &src, &dest](boost::system::error_code ec, size_t len) {
+                    [this, self,
+                     &src, &dest,
+                     valid_length,
+                     wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
                         if (ec) {
                             if (ec == boost::asio::error::operation_aborted) {
                                 LOG(DEBUG) << "Write operation canceled";
@@ -312,8 +305,8 @@ private:
                             LOG(WARNING) << "Relay write unexcepted error: " << ec;
                             return;
                         }
-                        src.buf.Reset();
-                        DoRelayStream(src, dest);
+                        src.buf.DeQueue(valid_length);
+                        DoRelayStream(src, dest, std::move(wrapper));
                         TimerAgain(src);
                     }
                 );
@@ -321,7 +314,7 @@ private:
         );
     }
 
-    void TimerExpiredCallBack(Peer &peer, boost::system::error_code ec) {
+    void TimerExpiredCallBack(Peer &peer, bsys::error_code ec) {
         if (ec != boost::asio::error::operation_aborted) {
             LOG(DEBUG) << peer.socket.remote_endpoint() << " TTL expired";
             peer.socket.close();
@@ -343,16 +336,19 @@ private:
     Peer client_;
     Peer remote_;
     tcp::resolver resolver_;
+    std::unique_ptr<BasicProtocol> protocol_;
 };
 
 void Socks5ProxyServer::DoAccept() {
-    acceptor_.async_accept([this](boost::system::error_code ec, tcp::socket socket) {
+    acceptor_.async_accept([this](bsys::error_code ec, tcp::socket socket) {
         if (!ec) {
             LOG(INFO) << "A new client accepted: " << socket.remote_endpoint();
-            std::make_shared<Session>(std::move(socket))->Start();
+            std::make_shared<Session>(std::move(socket),
+                                      protocol_factory_->GetProtocol())->Start();
         }
         if (running_) {
             DoAccept();
         }
     });
 }
+

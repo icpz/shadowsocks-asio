@@ -6,6 +6,7 @@
 #include <boost/program_options.hpp>
 
 #include "server.h"
+#include "basic_protocol.h"
 
 int main(int argc, char *argv[]) {
 
@@ -33,7 +34,8 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    Socks5ProxyServer server(ctx, port);
+    auto protocol_factory = std::make_unique<BasicProtocolFactory>();
+    Socks5ProxyServer server(ctx, port, std::move(protocol_factory));
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 

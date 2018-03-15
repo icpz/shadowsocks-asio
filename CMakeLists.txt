@@ -17,6 +17,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 list(APPEND SOURCES
      src/server.cc
      src/main.cc
+     src/basic_protocol.cc
     )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
