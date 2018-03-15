@@ -12,11 +12,10 @@ list(APPEND BOOST_DEPS
      boost_system-mt
     )
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 list(APPEND SOURCES
-     src/server.h
      src/server.cc
-     src/socks5.h
-     src/buffer.h
      src/main.cc
     )
 
