@@ -149,21 +149,23 @@ private:
                     return;
                 }
 
-                std::string address;
-                std::string port;
+                std::string address_str;
+                boost::asio::ip::address address;
                 size_t port_offset;
+                bool need_resolve = false;
                 switch(hdr->atype) {
                 case socks5::IPV4_ATYPE:
                     std::array<uint8_t, 4> ipv4_buf;
                     port_offset = ipv4_buf.size();
                     std::copy_n(&hdr->variable_field[0], port_offset, std::begin(ipv4_buf));
-                    address = boost::asio::ip::make_address_v4(ipv4_buf).to_string();
+                    address = boost::asio::ip::make_address_v4(ipv4_buf);
                     break;
 
                 case socks5::DOMAIN_ATYPE:
+                    need_resolve = true;
                     port_offset = hdr->variable_field[0];
                     std::copy_n(&hdr->variable_field[1], port_offset,
-                                std::back_inserter(address));
+                                std::back_inserter(address_str));
                     port_offset += 1;
                     break;
 
@@ -171,7 +173,7 @@ private:
                     std::array<uint8_t, 16> ipv6_buf;
                     port_offset = ipv6_buf.size();
                     std::copy_n(&hdr->variable_field[0], port_offset, std::begin(ipv6_buf));
-                    address = boost::asio::ip::make_address_v6(ipv6_buf).to_string();
+                    address = boost::asio::ip::make_address_v6(ipv6_buf);
                     break;
 
                 default:
@@ -179,10 +181,15 @@ private:
                     DoWriteSocks5Reply(socks5::ATYPE_NOT_SUPPORTED_REP);
                     return;
                 }
-                port = std::to_string(boost::endian::big_to_native(
-                                    *(uint16_t *)(&hdr->variable_field[port_offset])));
-                LOG(TRACE) << "Resolving to " << address << ":" << port;
-                DoResolveRemote(std::move(address), std::move(port));
+                uint16_t port = boost::endian::big_to_native(*(uint16_t *)(&hdr->variable_field[port_offset]));
+                if (need_resolve) {
+                    LOG(TRACE) << "Resolving to " << address_str << ":" << port;
+                    DoResolveRemote(std::move(address_str), std::to_string(port));
+                } else {
+                    tcp::endpoint ep(address, port);
+                    LOG(TRACE) << "Connecting to " << ep;
+                    DoConnectRemote(ep);
+                }
             }
         );
         TimerAgain(client_);
@@ -215,6 +222,29 @@ private:
                 }
                 LOG(DEBUG) << "Connected to remote " << itr->host_name();
                 client_.timer.cancel();
+                DoWriteSocks5Reply(socks5::SUCCEEDED_REP);
+            }
+        );
+        TimerAgain(client_);
+    }
+
+    void DoConnectRemote(tcp::endpoint ep) {
+        auto self(shared_from_this());
+        boost::asio::async_connect(remote_.socket, std::array<tcp::endpoint, 1>{ ep },
+            [this, self](boost::system::error_code ec, tcp::endpoint ep) {
+                if (ec) {
+                    if (ec == boost::asio::error::operation_aborted) {
+                        LOG(DEBUG) << "Connect canceled";
+                        return;
+                    }
+                    LOG(INFO) << "Cannot connect to remote: " << ec;
+                    DoWriteSocks5Reply((ec == boost::asio::error::connection_refused
+                                        ? socks5::CONN_REFUSED_REP
+                                        : socks5::NETWORK_UNREACHABLE_REP));
+                    return;
+                }
+                client_.timer.cancel();
+                LOG(DEBUG) << "Connected to remote " << ep;
                 DoWriteSocks5Reply(socks5::SUCCEEDED_REP);
             }
         );
