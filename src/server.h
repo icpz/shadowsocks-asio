@@ -9,10 +9,10 @@
 #include "buffer.h"
 
 
-class Server {
+class Socks5ProxyServer {
     typedef boost::asio::ip::tcp tcp;
 public:
-    Server(boost::asio::io_context &ctx, uint16_t port)
+    Socks5ProxyServer(boost::asio::io_context &ctx, uint16_t port)
         : acceptor_(ctx, tcp::endpoint(tcp::v4(), port)) {
         DoAccept();
     }

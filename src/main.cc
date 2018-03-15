@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    Server s(ctx, 58888);
+    Socks5ProxyServer s(ctx, 58888);
 
     ctx.run();
 
