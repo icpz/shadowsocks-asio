@@ -286,9 +286,12 @@ private:
                 }
                 src.timer.cancel();
                 src.buf.Append(len);
-                size_t valid_length = wrapper(src.buf);
+                ssize_t valid_length = wrapper(src.buf);
                 if (valid_length == 0) { // need more
                     DoRelayStream(src, dest, std::move(wrapper));
+                    return;
+                } else if (valid_length < 0) { // error occurs
+                    LOG(WARNING) << "Protocol plugin error";
                     return;
                 }
                 boost::asio::async_write(dest.socket,

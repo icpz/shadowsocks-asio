@@ -15,14 +15,14 @@ class BasicProtocol {
     using target_info_type = boost::variant<tcp::endpoint, resolve_args_type>;
     using next_stage = std::function<void(void)>;
 public:
-    using wrap_function = std::function<size_t(Buffer &)>;
+    using wrap_function = std::function<ssize_t(Buffer &)>;
 
     BasicProtocol() : need_resolve_(false), initialized_(false) { }
     virtual ~BasicProtocol() { }
 
     virtual uint8_t ParseHeader(Buffer &buf);
-    virtual size_t Wrap(Buffer &buf) { return buf.Size(); }
-    virtual size_t UnWrap(Buffer &buf) { return buf.Size(); }
+    virtual ssize_t Wrap(Buffer &buf) { return buf.Size(); }
+    virtual ssize_t UnWrap(Buffer &buf) { return buf.Size(); }
     virtual void DoInitializeProtocol(tcp::socket &socket, next_stage next) {
         initialized_ = true;
         next();
