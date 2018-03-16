@@ -24,6 +24,7 @@ public:
     virtual size_t Wrap(Buffer &buf) { return buf.Size(); }
     virtual size_t UnWrap(Buffer &buf) { return buf.Size(); }
     virtual void DoInitializeProtocol(tcp::socket &socket, next_stage next) {
+        initialized_ = true;
         next();
     }
     virtual tcp::endpoint GetEndpoint() const;

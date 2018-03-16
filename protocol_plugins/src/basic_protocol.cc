@@ -50,7 +50,6 @@ uint8_t BasicProtocol::ParseHeader(Buffer &buf) {
         target_ = tcp::endpoint{ address, port };
     }
 
-    initialized_ = true;
     return socks5::SUCCEEDED_REP;
 }
 
