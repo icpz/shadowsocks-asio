@@ -44,6 +44,14 @@ public:
         return curr_;
     }
 
+    uint8_t *Begin() {
+        return buf_.data();
+    }
+
+    uint8_t *End() {
+        return Begin() + Size();
+    }
+
     void PrepareCapacity(size_t more_length) {
         size_t total = Size() + more_length;
         if (total > buf_.size()) {
@@ -66,7 +74,7 @@ public:
     }
 
     uint8_t *get_data() {
-        return buf_.data();
+        return Begin();
     }
 
 private:
