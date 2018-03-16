@@ -6,7 +6,7 @@
 #include <boost/program_options.hpp>
 
 #include "server.h"
-#include "basic_protocol.h"
+#include "protocol_plugins/basic_protocol.h"
 
 int main(int argc, char *argv[]) {
 

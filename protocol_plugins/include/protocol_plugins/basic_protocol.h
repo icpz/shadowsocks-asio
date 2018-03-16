@@ -7,7 +7,7 @@
 #include <boost/asio.hpp>
 #include <boost/variant.hpp>
 
-#include "buffer.h"
+#include "common_utils/buffer.h"
 
 class BasicProtocol {
     typedef boost::asio::ip::tcp tcp;
