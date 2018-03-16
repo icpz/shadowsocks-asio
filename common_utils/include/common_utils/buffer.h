@@ -29,6 +29,13 @@ public:
         curr_ += len;
     }
 
+    template<class Container>
+    void AppendData(const Container cont) {
+        PrepareCapacity(cont.size());
+        std::copy(std::begin(cont), std::end(cont), buf_.data() + curr_);
+        Append(cont.size());
+    }
+
     void Reset(size_t new_len = 0) {
         curr_ = new_len;
     }
