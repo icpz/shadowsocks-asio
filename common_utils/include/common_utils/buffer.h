@@ -21,18 +21,19 @@ public:
             LOG(FATAL) << "Buffer::Dequeue len > total";
             len = total;
         }
-        std::copy(buf_.begin() + len, buf_.begin() + total, buf_.begin());
+        std::copy(Begin() + len, End(), Begin());
         curr_ = total - len;
     }
 
     void Append(size_t len) {
+        PrepareCapacity(len);
         curr_ += len;
     }
 
     template<class Container>
     void AppendData(const Container cont) {
         PrepareCapacity(cont.size());
-        std::copy(std::begin(cont), std::end(cont), buf_.data() + curr_);
+        std::copy(std::begin(cont), std::end(cont), End());
         Append(cont.size());
     }
 

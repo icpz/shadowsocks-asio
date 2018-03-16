@@ -5,8 +5,8 @@
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 
+#include <protocol_plugins/basic_protocol.h>
 #include "server.h"
-#include "protocol_plugins/basic_protocol.h"
 
 int main(int argc, char *argv[]) {
 
