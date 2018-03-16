@@ -12,11 +12,13 @@
 
 class Socks5ProxyServer {
     typedef boost::asio::ip::tcp tcp;
+    using ProtocolPtr = std::unique_ptr<BasicProtocol>;
+    using ProtocolGenerator = std::function<ProtocolPtr()>;
 public:
     Socks5ProxyServer(boost::asio::io_context &ctx, uint16_t port,
-                      std::unique_ptr<BasicProtocolFactory> protocol_factory)
+                      ProtocolGenerator protocol_generator)
         : acceptor_(ctx, tcp::endpoint(tcp::v4(), port)),
-          protocol_factory_(std::move(protocol_factory)) {
+          protocol_generator_(std::move(protocol_generator)) {
         LOG(INFO) << "Server running at " << acceptor_.local_endpoint();
         running_ = true;
         DoAccept();
@@ -32,7 +34,7 @@ private:
 
     tcp::acceptor acceptor_;
     bool running_;
-    std::unique_ptr<BasicProtocolFactory> protocol_factory_;
+    ProtocolGenerator protocol_generator_;
 };
 
 #endif

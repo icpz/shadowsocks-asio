@@ -34,8 +34,7 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    auto protocol_factory = std::make_unique<BasicProtocolFactory>();
-    Socks5ProxyServer server(ctx, port, std::move(protocol_factory));
+    Socks5ProxyServer server(ctx, port, std::bind(&GetProtocol<BasicProtocol>));
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 

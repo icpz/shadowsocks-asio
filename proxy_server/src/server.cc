@@ -37,8 +37,7 @@ public:
 
     Session(tcp::socket socket, std::unique_ptr<BasicProtocol> protocol, size_t ttl = 5000)
         : context(socket.get_executor().context()),
-          client_(std::move(socket), ttl),
-          remote_(context, ttl),
+          client_(std::move(socket), ttl), remote_(context, ttl),
           resolver_(context), protocol_(std::move(protocol)) {
     }
 
@@ -346,8 +345,7 @@ void Socks5ProxyServer::DoAccept() {
     acceptor_.async_accept([this](bsys::error_code ec, tcp::socket socket) {
         if (!ec) {
             LOG(INFO) << "A new client accepted: " << socket.remote_endpoint();
-            std::make_shared<Session>(std::move(socket),
-                                      protocol_factory_->GetProtocol())->Start();
+            std::make_shared<Session>(std::move(socket), protocol_generator_())->Start();
         }
         if (running_) {
             DoAccept();

@@ -2,8 +2,10 @@
 #ifndef __BASIC_PROTOCOL_H__
 #define __BASIC_PROTOCOL_H__
 
+#include <memory>
 #include <utility>
 #include <functional>
+#include <type_traits>
 #include <boost/asio.hpp>
 #include <boost/variant.hpp>
 
@@ -37,15 +39,12 @@ private:
     bool initialized_;
 };
 
-class BasicProtocolFactory {
-public:
-    BasicProtocolFactory() = default;
-    virtual ~BasicProtocolFactory() = default;
-
-    virtual std::unique_ptr<BasicProtocol> GetProtocol() {
-        return std::make_unique<BasicProtocol>();
-    }
-};
+template<typename ProtocolType, typename ...Args>
+std::unique_ptr<BasicProtocol>
+    GetProtocol(Args&& ...args) {
+    static_assert(std::is_base_of<BasicProtocol, ProtocolType>::value, "ProtocolType must inherit from BasicProtocol");
+    return std::make_unique<ProtocolType>(std::forward<Args>(args)...);
+}
 
 #endif
 
