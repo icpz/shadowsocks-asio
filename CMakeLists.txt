@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
 add_subdirectory(common_utils)
-add_subdirectory(protocol_plugins)
-add_subdirectory(proxy_server)
 add_subdirectory(crypto_utils)
+add_subdirectory(protocol_plugins)
+add_subdirectory(client)
 

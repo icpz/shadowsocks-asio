@@ -1,8 +1,8 @@
-# Socks5 Proxy
+# Shadowsocks boost::asio port
 
 ## Introduction
 
-This a very simple socks5 proxy server based on boost::asio.
+This is a simple port of shadowsocks.
 
 ## License
 
