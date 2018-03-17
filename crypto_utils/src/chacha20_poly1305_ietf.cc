@@ -7,7 +7,29 @@
 #include "crypto_utils/crypto.h"
 #include "crypto_utils/aead.h"
 
-static const CryptoContextGeneratorRegister<Chacha20Poly1305Ietf> kReg("chacha20-ietf-poly1305");
+class Chacha20Poly1305Ietf final : public AeadCipher<32, 12, 16> {
+public:
+    Chacha20Poly1305Ietf(std::vector<uint8_t> master_key)
+        : AeadCipher(std::move(master_key)) {
+    }
+
+    ~Chacha20Poly1305Ietf() { }
+
+private:
+    int CipherEncrypt(
+                void *c, size_t *clen,
+                const uint8_t *m, size_t mlen,
+                const uint8_t *ad, size_t adlen,
+                const uint8_t *n, const uint8_t *k
+        );
+
+    int CipherDecrypt(
+                void *m, size_t *mlen,
+                const uint8_t *c, size_t clen,
+                const uint8_t *ad, size_t adlen,
+                const uint8_t *n, const uint8_t *k
+        );
+};
 
 int Chacha20Poly1305Ietf::CipherEncrypt(
                 void *c, size_t *clen,
@@ -43,4 +65,6 @@ int Chacha20Poly1305Ietf::CipherDecrypt(
     *mlen = (size_t)mlenll;
     return ret;
 }
+
+static const CryptoContextGeneratorRegister<Chacha20Poly1305Ietf> kReg("chacha20-ietf-poly1305");
 

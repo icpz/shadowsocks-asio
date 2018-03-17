@@ -52,30 +52,6 @@ protected:
     std::array<uint8_t, nonce_len> nonce_;
 };
 
-class Chacha20Poly1305Ietf final : public AeadCipher<32, 12, 16> {
-public:
-    Chacha20Poly1305Ietf(std::vector<uint8_t> master_key)
-        : AeadCipher(std::move(master_key)) {
-    }
-
-    ~Chacha20Poly1305Ietf() { }
-
-private:
-    int CipherEncrypt(
-                void *c, size_t *clen,
-                const uint8_t *m, size_t mlen,
-                const uint8_t *ad, size_t adlen,
-                const uint8_t *n, const uint8_t *k
-        );
-
-    int CipherDecrypt(
-                void *m, size_t *mlen,
-                const uint8_t *c, size_t clen,
-                const uint8_t *ad, size_t adlen,
-                const uint8_t *n, const uint8_t *k
-        );
-};
-
 template<size_t key_len, size_t nonce_len, size_t tag_len>
 ssize_t AeadCipher<key_len, nonce_len, tag_len>::Encrypt(Buffer &buf) {
     size_t ciphertext_length = 0;
