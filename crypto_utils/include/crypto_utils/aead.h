@@ -5,18 +5,15 @@
 #include <string>
 #include <boost/utility/string_view.hpp>
 #include <boost/endian/buffers.hpp>
-#include <openssl/evp.h>
-#include <openssl/kdf.h>
 #include <sodium.h>
-#include <mbedtls/md.h>
 
 #include "crypto_utils/cipher.h"
 
 template<size_t key_len, size_t nonce_len, size_t tag_len>
 class AeadCipher : public Cipher {
 public:
-    AeadCipher(boost::string_view password)
-        : initialized_(false), password_(password) {
+    AeadCipher(std::vector<uint8_t> master_key)
+        : Cipher(std::move(master_key)), initialized_(false) {
         std::fill(nonce_.begin(), nonce_.end(), 0);
     }
 
@@ -24,6 +21,11 @@ public:
 
     ssize_t Encrypt(Buffer &buf);
     ssize_t Decrypt(Buffer &buf);
+
+    static void DeriveKeyFromPassword(std::string password, std::vector<uint8_t> &key) {
+        key.resize(key_len);
+        Cipher::DeriveKeyFromPassword(std::move(password), key);
+    }
 
     virtual bool DeriveSessionKey();
 
@@ -44,7 +46,6 @@ protected:
 
     bool initialized_;
     std::vector<uint8_t> chunk_;
-    boost::string_view password_;
     std::array<uint8_t, key_len> key_;
     std::array<uint8_t, key_len> salt_;
     std::array<uint8_t, nonce_len> nonce_;
@@ -52,8 +53,8 @@ protected:
 
 class Chacha20Poly1305Ietf final : public AeadCipher<32, 12, 16> {
 public:
-    Chacha20Poly1305Ietf(boost::string_view password)
-        : AeadCipher(password) {
+    Chacha20Poly1305Ietf(std::vector<uint8_t> master_key)
+        : AeadCipher(std::move(master_key)) {
     }
 
     ~Chacha20Poly1305Ietf() { }
@@ -219,26 +220,10 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
 
 template<size_t key_len, size_t nonce_len, size_t tag_len>
 bool AeadCipher<key_len, nonce_len, tag_len>::DeriveSessionKey() {
-    EVP_PKEY_CTX *ctx;
-    size_t outlen = key_.size();
-    bool result = true;
-    std::array<uint8_t, key_len> dkey;
-    crypto_derive_key(password_.data(), dkey.data(), key_len);
-
-    ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
-    result = (EVP_PKEY_derive_init(ctx) > 0)
-          && (EVP_PKEY_CTX_set_hkdf_md(ctx, EVP_sha1()) > 0)
-          && (EVP_PKEY_CTX_set1_hkdf_salt(ctx, salt_.data(), salt_.size()) > 0)
-          && (EVP_PKEY_CTX_set1_hkdf_key(
-                  ctx,
-                  dkey.data(),
-                  dkey.size()
-              ) > 0)
-          && (EVP_PKEY_CTX_add1_hkdf_info(ctx, (const uint8_t *)"ss-subkey", 9) > 0)
-          && (EVP_PKEY_derive(ctx, key_.data(), &outlen) > 0);
-    result = result && (outlen == key_.size());
-
-    return result;
+    return Cipher::HKDF_SHA1(master_key_.data(), master_key_.size(),
+                             salt_.data(), salt_.size(),
+                             (const uint8_t *)"ss-subkey", 9,
+                             key_.data(), key_len);
 }
 
 #endif

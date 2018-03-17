@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     boost::asio::ip::tcp::endpoint ep(boost::asio::ip::make_address("127.0.0.1"), 59999);
     using CryptoGeneratorType = std::function<std::unique_ptr<CryptoContext>()>;
     using ProtocolGeneratorType = std::function<std::unique_ptr<BasicProtocol>()>;
-    CryptoGeneratorType CryptoGenerator = std::bind(GetCryptoContext<Chacha20Poly1305Ietf, boost::string_view>, "12345678");
+    CryptoGeneratorType CryptoGenerator = MakeCryptoContextGenerator<Chacha20Poly1305Ietf>("12345678");
     ProtocolGeneratorType ProtocolGenerator = [ep, CryptoGenerator]() { return GetProtocol<ShadowsocksProtocol>(ep, CryptoGenerator); };
     Socks5ProxyServer server(
         ctx, port, ProtocolGenerator

@@ -1,4 +1,8 @@
 
+#include <mbedtls/md.h>
+#include <openssl/evp.h>
+#include <openssl/kdf.h>
+
 #include "crypto_utils/cipher.h"
 
 int crypto_derive_key(const char *pass, uint8_t *key, size_t key_len) {
@@ -40,5 +44,30 @@ int crypto_derive_key(const char *pass, uint8_t *key, size_t key_len) {
 
     mbedtls_md_free(&c);
     return key_len;
+}
+
+bool Cipher::HKDF_SHA1(const uint8_t *key, size_t key_len,
+                       const uint8_t *salt, size_t salt_len,
+                       const uint8_t *info, size_t info_len,
+                       uint8_t *session_key, size_t skey_len) {
+    bool result = true;
+    EVP_PKEY_CTX *ctx;
+    size_t outlen = skey_len;
+
+    ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
+    result = (EVP_PKEY_derive_init(ctx) > 0)
+          && (EVP_PKEY_CTX_set_hkdf_md(ctx, EVP_sha1()) > 0)
+          && (EVP_PKEY_CTX_set1_hkdf_salt(ctx, salt, salt_len) > 0)
+          && (EVP_PKEY_CTX_set1_hkdf_key(ctx, key, key_len) > 0)
+          && (EVP_PKEY_CTX_add1_hkdf_info(ctx, info, info_len) > 0)
+          && (EVP_PKEY_derive(ctx, session_key, &outlen) > 0);
+    result = result && (outlen == skey_len);
+
+    return result;
+}
+
+void Cipher::DeriveKeyFromPassword(std::string password, std::vector<uint8_t> &key) {
+    size_t key_len = key.size();
+    crypto_derive_key(password.c_str(), key.data(), key_len);
 }
 
