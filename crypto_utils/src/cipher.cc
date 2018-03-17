@@ -1,50 +1,8 @@
 
-#include <mbedtls/md.h>
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
 
 #include "crypto_utils/cipher.h"
-
-int crypto_derive_key(const char *pass, uint8_t *key, size_t key_len) {
-    size_t datal;
-    datal = strlen((const char *)pass);
-
-    const mbedtls_md_info_t *md = mbedtls_md_info_from_string("MD5");
-    if (md == NULL) {
-        LOG(FATAL) << "MD5 Digest not found in crypto library";
-    }
-
-    mbedtls_md_context_t c;
-    unsigned char md_buf[256];
-    int addmd;
-    unsigned int i, j, mds;
-
-    mds = mbedtls_md_get_size(md);
-    memset(&c, 0, sizeof(mbedtls_md_context_t));
-
-    if (pass == NULL)
-        return key_len;
-    if (mbedtls_md_setup(&c, md, 1))
-        return 0;
-
-    for (j = 0, addmd = 0; j < key_len; addmd++) {
-        mbedtls_md_starts(&c);
-        if (addmd) {
-            mbedtls_md_update(&c, md_buf, mds);
-        }
-        mbedtls_md_update(&c, (uint8_t *)pass, datal);
-        mbedtls_md_finish(&c, &(md_buf[0]));
-
-        for (i = 0; i < mds; i++, j++) {
-            if (j >= key_len)
-                break;
-            key[j] = md_buf[i];
-        }
-    }
-
-    mbedtls_md_free(&c);
-    return key_len;
-}
 
 bool Cipher::HKDF_SHA1(const uint8_t *key, size_t key_len,
                        const uint8_t *salt, size_t salt_len,
@@ -66,8 +24,45 @@ bool Cipher::HKDF_SHA1(const uint8_t *key, size_t key_len,
     return result;
 }
 
+static size_t __BytesToKey(const std::string &password, uint8_t *key, size_t key_len);
+
 void Cipher::DeriveKeyFromPassword(std::string password, std::vector<uint8_t> &key) {
     size_t key_len = key.size();
-    crypto_derive_key(password.c_str(), key.data(), key_len);
+    __BytesToKey(password, key.data(), key_len);
+}
+
+size_t __BytesToKey(const std::string &password, uint8_t *key, size_t key_len) {
+    size_t datal = password.size();
+    const uint8_t *pass = (const uint8_t *)password.data();
+
+    const EVP_MD *md = EVP_md5();
+    if (md == NULL) {
+        LOG(FATAL) << "MD5 Digest not found in crypto library";
+    }
+
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    uint8_t md_buf[EVP_MAX_MD_SIZE];
+    int addmd;
+    unsigned int i, j, mds;
+
+    mds = EVP_MD_CTX_size(ctx);
+
+    for (j = 0, addmd = 0; j < key_len; addmd++) {
+        EVP_DigestInit_ex(ctx, md, NULL);
+        if (addmd) {
+            EVP_DigestUpdate(ctx, md_buf, mds);
+        }
+        EVP_DigestUpdate(ctx, pass, datal);
+        EVP_DigestFinal_ex(ctx, &(md_buf[0]), &mds);
+
+        for (i = 0; i < mds; i++, j++) {
+            if (j >= key_len)
+                break;
+            key[j] = md_buf[i];
+        }
+    }
+
+    EVP_MD_CTX_free(ctx);
+    return key_len;
 }
 

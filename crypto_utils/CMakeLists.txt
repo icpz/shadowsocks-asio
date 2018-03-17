@@ -19,9 +19,6 @@ list(APPEND BOOST_DEPS
 
 list(APPEND DEPS
      common_utils
-     mbedcrypto
-     mbedx509
-     mbedtls
      ${LIBCRYPTO_LDFLAGS}
      ${LIBSODIUM_LDFLAGS}
      ${BOOST_DEPS}
