@@ -55,7 +55,7 @@ private:
     void DoReadSocks5MethodSelectionMessage() {
         auto self(shared_from_this());
         client_.socket.async_read_some(
-            client_.buf.get_buffer(),
+            client_.buf.GetBuffer(),
             [this, self](bsys::error_code ec, size_t len) {
                 if (ec) {
                     if (ec == boost::asio::error::misc_errors::eof) {
@@ -67,13 +67,13 @@ private:
                 }
                 client_.timer.cancel();
                 client_.buf.Append(len);
-                auto *hdr = (socks5::MethodSelectionMessageHeader *)(client_.buf.get_data());
+                auto *hdr = (socks5::MethodSelectionMessageHeader *)(client_.buf.GetData());
                 if (hdr->ver != socks5::VERSION) {
                     LOG(WARNING) << "Unsupport socks version: " << (uint32_t)hdr->ver;
                     return;
                 }
                 size_t need_more = socks5::MethodSelectionMessageHeader::NeedMore(
-                                        client_.buf.get_data(), client_.buf.Size());
+                                        client_.buf.GetData(), client_.buf.Size());
                 if (need_more) {
                     LOG(TRACE) << "need more data, current: " << client_.buf.Size()
                                << "excepted more: " << need_more;
@@ -97,12 +97,12 @@ private:
 
     void DoWriteSocks5MethodSelectionReply(uint8_t method) {
         auto self(shared_from_this());
-        auto *hdr = (socks5::MethodSelectionMessageReply *)(client_.buf.get_data());
+        auto *hdr = (socks5::MethodSelectionMessageReply *)(client_.buf.GetData());
         hdr->ver = socks5::VERSION;
         hdr->method = method;
         client_.buf.Reset(2);
         boost::asio::async_write(
-            client_.socket, client_.buf.get_const_buffer(),
+            client_.socket, client_.buf.GetConstBuffer(),
             [this, self, method](bsys::error_code ec, size_t len) {
                 if (ec) {
                     LOG(WARNING) << "Unexcepted error: " << ec;
@@ -122,7 +122,7 @@ private:
         auto self(shared_from_this());
         boost::asio::async_read(
             client_.socket,
-            client_.buf.get_buffer(),
+            client_.buf.GetBuffer(),
             boost::asio::transfer_at_least(at_least),
             [this, self](bsys::error_code ec, size_t len) {
                 if (ec) {
@@ -131,7 +131,7 @@ private:
                 }
                 client_.timer.cancel();
                 client_.buf.Append(len);
-                size_t need_more = socks5::Request::NeedMore(client_.buf.get_data(),
+                size_t need_more = socks5::Request::NeedMore(client_.buf.GetData(),
                                                              client_.buf.Size());
                 if (need_more) {
                     LOG(TRACE) << "Need more data: " << need_more;
@@ -139,7 +139,7 @@ private:
                     DoReadSocks5Request(need_more);
                     return;
                 }
-                auto *hdr = (socks5::Request *)(client_.buf.get_data());
+                auto *hdr = (socks5::Request *)(client_.buf.GetData());
                 if (hdr->ver != socks5::VERSION) {
                     LOG(WARNING) << "Unsupport socks version: " << (uint32_t)hdr->ver;
                     return;
@@ -227,13 +227,13 @@ private:
 
     void DoWriteSocks5Reply(uint8_t reply) {
         auto self(shared_from_this());
-        auto *hdr = (socks5::Reply *)(client_.buf.get_data());
+        auto *hdr = (socks5::Reply *)(client_.buf.GetData());
         hdr->rsv = 0;
         hdr->rep = reply;
         client_.buf.Reset(
-                socks5::Reply::FillBoundAddress(client_.buf.get_data(),
+                socks5::Reply::FillBoundAddress(client_.buf.GetData(),
                                                 remote_.socket.local_endpoint()));
-        boost::asio::async_write(client_.socket, client_.buf.get_const_buffer(),
+        boost::asio::async_write(client_.socket, client_.buf.GetConstBuffer(),
             [this, self, reply](bsys::error_code ec, size_t len) {
                 if (ec) {
                     LOG(WARNING) << "Unexcepted write error " << ec;
@@ -267,7 +267,7 @@ private:
     void DoRelayStream(Peer &src, Peer &dest, BasicProtocol::wrap_function wrapper) {
         auto self(shared_from_this());
         src.socket.async_read_some(
-            src.buf.get_buffer(),
+            src.buf.GetBuffer(),
             [this, self, &src, &dest,
              wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
                 if (ec) {
@@ -294,7 +294,7 @@ private:
                     return;
                 }
                 boost::asio::async_write(dest.socket,
-                    src.buf.get_const_buffer(),
+                    src.buf.GetConstBuffer(),
                     [this, self,
                      &src, &dest,
                      valid_length,

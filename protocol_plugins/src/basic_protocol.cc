@@ -7,7 +7,7 @@
 using boost::asio::ip::tcp;
 
 uint8_t BasicProtocol::ParseHeader(Buffer &buf) {
-    auto *hdr = (socks5::Request *)(buf.get_data());
+    auto *hdr = (socks5::Request *)(buf.GetData());
     std::string address_str;
     boost::asio::ip::address address;
     size_t port_offset;

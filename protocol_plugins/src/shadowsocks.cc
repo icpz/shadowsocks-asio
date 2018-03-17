@@ -18,7 +18,7 @@ uint8_t ShadowsocksProtocol::ParseHeader(Buffer &buf) {
 void ShadowsocksProtocol::DoInitializeProtocol(tcp::socket &socket, BasicProtocol::next_stage next) {
     Wrap(header_buf_);
     boost::asio::async_write(
-        socket, header_buf_.get_const_buffer(),
+        socket, header_buf_.GetConstBuffer(),
         [next](boost::system::error_code ec, size_t length) {
             if (ec) {
                 LOG(INFO) << "unexcepted error while initializing protocol: " << ec;

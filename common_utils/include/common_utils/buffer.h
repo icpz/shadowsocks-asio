@@ -5,7 +5,6 @@
 #include <vector>
 #include <algorithm>
 #include <boost/asio.hpp>
-#include <boost/log/trivial.hpp>
 
 #include "common_utils/common.h"
 
@@ -15,15 +14,7 @@ public:
         : buf_(std::max(1024UL, max_length)), curr_(0) {
     }
 
-    void DeQueue(size_t len) {
-        size_t total = curr_;
-        if (len > total) {
-            LOG(FATAL) << "Buffer::Dequeue len > total";
-            len = total;
-        }
-        std::copy(Begin() + len, End(), Begin());
-        curr_ = total - len;
-    }
+    void DeQueue(size_t len);
 
     void Append(size_t len) {
         PrepareCapacity(len);
@@ -79,15 +70,15 @@ public:
         return buf_.size();
     }
 
-    boost::asio::mutable_buffer get_buffer() {
+    boost::asio::mutable_buffer GetBuffer() {
         return boost::asio::buffer(End(), Capacity() - Size());
     }
 
-    boost::asio::const_buffer get_const_buffer() const {
+    boost::asio::const_buffer GetConstBuffer() const {
         return boost::asio::buffer(Begin(), Size());
     }
 
-    uint8_t *get_data() {
+    uint8_t *GetData() {
         return Begin();
     }
 
