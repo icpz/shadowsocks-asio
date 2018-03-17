@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <boost/log/trivial.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
@@ -10,39 +11,67 @@
 
 #include "server.h"
 
+void InitialLogLevel(int verbose);
+
 int main(int argc, char *argv[]) {
 
     namespace bpo = boost::program_options;
 
     bpo::options_description desc("Socks5 Proxy Server");
     desc.add_options()
-        ("bind-port,p", bpo::value<uint16_t>()->default_value(58888), "Specific port that server will listen")
+        ("bind-port,l", bpo::value<uint16_t>()->default_value(58888), "Specific port that server will listen")
+        ("server-address,s", bpo::value<std::string>(), "Server address")
+        ("server-port,p", bpo::value<uint16_t>()->default_value(8088), "Server port")
+        ("password,k", bpo::value<std::string>(), "Password")
+        ("config-file,c", bpo::value<std::string>(), "Configuration file")
+        ("verbose,v", bpo::value<int>()->default_value(1),"Verbose log")
         ("help", "Print this help message");
 
     bpo::variables_map vm;
     bpo::store(bpo::parse_command_line(argc, argv, desc), vm);
     bpo::notify(vm);
-    
-    uint16_t port = vm["bind-port"].as<uint16_t>();
     if (vm.count("help")) {
         std::cout << desc << std::endl;
         return 0;
     }
 
-    boost::log::core::get()->set_filter
-    (
-        boost::log::trivial::severity >= boost::log::trivial::trace
-    );
+    if (vm.count("config-file")) {
+        auto filename = vm["config-file"].as<std::string>();
+        std::ifstream ifs(filename);
+        if (!ifs) {
+            std::cerr << "Unavailable configure file" << std::endl;
+            return -1;
+        }
+        bpo::store(bpo::parse_config_file(ifs, desc), vm);
+        bpo::notify(vm);
+    }
+    
+    uint16_t bind_port = vm["bind-port"].as<uint16_t>();
+    if (!vm.count("server-address")) {
+        std::cerr << "Please specify the server address" << std::endl;
+        return -1;
+    }
+    auto server_address = boost::asio::ip::make_address(vm["server-address"].as<std::string>());
+    if (server_address.is_unspecified()) {
+        std::cerr << "Unavailable server address" << std::endl;
+        return -1;
+    }
+    uint16_t server_port = vm["server-port"].as<uint16_t>();
 
+    if (!vm.count("password")) {
+        std::cerr << "Please specify the password" << std::endl;
+        return -1;
+    }
+    std::string password = vm["password"].as<std::string>();
+
+    InitialLogLevel(vm["verbose"].as<int>());
     boost::asio::io_context ctx;
 
-    boost::asio::ip::tcp::endpoint ep(boost::asio::ip::make_address("127.0.0.1"), 59999);
-    using CryptoGeneratorType = std::function<std::unique_ptr<CryptoContext>()>;
-    using ProtocolGeneratorType = std::function<std::unique_ptr<BasicProtocol>()>;
-    CryptoGeneratorType CryptoGenerator = MakeCryptoContextGenerator<Chacha20Poly1305Ietf>("12345678");
-    ProtocolGeneratorType ProtocolGenerator = [ep, CryptoGenerator]() { return GetProtocol<ShadowsocksProtocol>(ep, CryptoGenerator); };
+    boost::asio::ip::tcp::endpoint ep(server_address, server_port);
+    auto CryptoGenerator = MakeCryptoContextGenerator<Chacha20Poly1305Ietf>(password);
+    auto ProtocolGenerator = [ep, CryptoGenerator]() { return GetProtocol<ShadowsocksProtocol>(ep, CryptoGenerator); };
     Socks5ProxyServer server(
-        ctx, port, ProtocolGenerator
+        ctx, bind_port, ProtocolGenerator
     );
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
@@ -62,3 +91,25 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+void InitialLogLevel(int verbose) {
+    boost::log::trivial::severity_level level;
+    verbose = std::min(3, verbose);
+    switch(verbose) {
+    case 3:
+        level = boost::log::trivial::trace;
+        break;
+    case 2:
+        level = boost::log::trivial::debug;
+        break;
+    case 1:
+        level = boost::log::trivial::info;
+        break;
+    default:
+        level = boost::log::trivial::warning;
+        break;
+    }
+    boost::log::core::get()->set_filter
+    (
+        boost::log::trivial::severity >= level
+    );
+}
