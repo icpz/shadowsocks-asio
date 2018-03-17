@@ -8,6 +8,7 @@
 #include <sodium.h>
 
 #include "crypto_utils/cipher.h"
+#include "crypto_utils/crypto.h"
 
 template<size_t key_len, size_t nonce_len, size_t tag_len>
 class AeadCipher : public Cipher {

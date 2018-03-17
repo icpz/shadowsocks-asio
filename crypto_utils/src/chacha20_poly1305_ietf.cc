@@ -4,7 +4,10 @@
 
 #include <common_utils/common.h>
 
+#include "crypto_utils/crypto.h"
 #include "crypto_utils/aead.h"
+
+static const CryptoContextGeneratorRegister<Chacha20Poly1305Ietf> kReg("chacha20-ietf-poly1305");
 
 int Chacha20Poly1305Ietf::CipherEncrypt(
                 void *c, size_t *clen,

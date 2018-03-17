@@ -8,6 +8,7 @@
 
 #include <protocol_plugins/shadowsocks.h>
 #include <crypto_utils/aead.h>
+#include <crypto_utils/crypto.h>
 
 #include "server.h"
 
@@ -22,10 +23,11 @@ int main(int argc, char *argv[]) {
         ("bind-port,l", bpo::value<uint16_t>()->default_value(58888), "Specific port that server will listen")
         ("server-address,s", bpo::value<std::string>(), "Server address")
         ("server-port,p", bpo::value<uint16_t>()->default_value(8088), "Server port")
+        ("method,m", bpo::value<std::string>(), "Cipher method")
         ("password,k", bpo::value<std::string>(), "Password")
         ("config-file,c", bpo::value<std::string>(), "Configuration file")
         ("verbose,v", bpo::value<int>()->default_value(1),"Verbose log")
-        ("help", "Print this help message");
+        ("help,h", "Print this help message");
 
     bpo::variables_map vm;
     bpo::store(bpo::parse_command_line(argc, argv, desc), vm);
@@ -67,9 +69,20 @@ int main(int argc, char *argv[]) {
     InitialLogLevel(vm["verbose"].as<int>());
     boost::asio::io_context ctx;
 
+    if (!vm.count("method")) {
+        std::cerr << "Please specify a cipher method using -m option" << std::endl;
+        return -1;
+    }
+    auto factory = CryptoContextGeneratorFactory::Instance();
+    auto CryptoGenerator = factory->GetGenerator(vm["method"].as<std::string>(), password);
+    if (!CryptoGenerator) {
+        std::cerr << "Invalid cipher type!" << std::endl;
+        return -1;
+    }
     boost::asio::ip::tcp::endpoint ep(server_address, server_port);
-    auto CryptoGenerator = MakeCryptoContextGenerator<Chacha20Poly1305Ietf>(password);
-    auto ProtocolGenerator = [ep, CryptoGenerator]() { return GetProtocol<ShadowsocksProtocol>(ep, CryptoGenerator); };
+    auto ProtocolGenerator = [ep, g = std::move(CryptoGenerator)]() {
+        return GetProtocol<ShadowsocksProtocol>(ep, *g);
+    };
     Socks5ProxyServer server(
         ctx, bind_port, ProtocolGenerator
     );

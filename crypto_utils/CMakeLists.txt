@@ -29,8 +29,9 @@ include_directories(${LIBSODIUM_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 list(APPEND SOURCES
-     src/chacha20_poly1305_ietf.cc
      src/cipher.cc
+     src/crypto.cc
+     src/chacha20_poly1305_ietf.cc
     )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
