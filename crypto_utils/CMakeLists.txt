@@ -32,6 +32,7 @@ list(APPEND SOURCES
      src/cipher.cc
      src/crypto.cc
      src/chacha20_poly1305_ietf.cc
+     src/aes_gcm_family.cc
     )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
