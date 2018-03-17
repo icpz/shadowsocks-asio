@@ -307,11 +307,13 @@ private:
                             LOG(WARNING) << "Relay write unexcepted error: " << ec;
                             return;
                         }
+                        dest.timer.cancel();
                         src.buf.Reset();
                         DoRelayStream(src, dest, std::move(wrapper));
                         TimerAgain(src);
                     }
                 );
+                TimerAgain(dest);
             }
         );
     }
