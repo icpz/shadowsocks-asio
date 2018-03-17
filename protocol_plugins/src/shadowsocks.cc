@@ -1,6 +1,5 @@
 
 #include <common_utils/socks5.h>
-#include <cstdio>
 
 #include "protocol_plugins/shadowsocks.h"
 
@@ -17,11 +16,6 @@ uint8_t ShadowsocksProtocol::ParseHeader(Buffer &buf) {
 }
 
 void ShadowsocksProtocol::DoInitializeProtocol(tcp::socket &socket, BasicProtocol::next_stage next) {
-    fprintf(stderr, "header dump: \n");
-    for (int i = 0; i < header_buf_.Size(); ++i) {
-        fprintf(stderr, "%02hhx", header_buf_.Begin()[i]);
-    }
-    fputs("\n", stderr);
     Wrap(header_buf_);
     boost::asio::async_write(
         socket, header_buf_.get_const_buffer(),

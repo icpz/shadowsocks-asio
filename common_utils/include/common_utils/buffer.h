@@ -38,6 +38,7 @@ public:
     }
 
     void Reset(size_t new_len = 0) {
+        ExpandCapacity(new_len);
         curr_ = new_len;
     }
 
@@ -49,29 +50,41 @@ public:
         return buf_.data();
     }
 
+    const uint8_t *Begin() const {
+        return buf_.data();
+    }
+
     uint8_t *End() {
+        return Begin() + Size();
+    }
+
+    const uint8_t *End() const {
         return Begin() + Size();
     }
 
     void PrepareCapacity(size_t more_length) {
         size_t total = Size() + more_length;
-        if (total > buf_.size()) {
+        if (total > Capacity()) {
             ExpandCapacity(total);
         }
     }
 
     void ExpandCapacity(size_t new_capacity) {
-        if (buf_.size() < new_capacity) {
+        if (Capacity() < new_capacity) {
             buf_.resize(new_capacity);
         }
     }
 
+    size_t Capacity() const {
+        return buf_.size();
+    }
+
     boost::asio::mutable_buffer get_buffer() {
-        return boost::asio::buffer(buf_) + curr_;
+        return boost::asio::buffer(End(), Capacity() - Size());
     }
 
     boost::asio::const_buffer get_const_buffer() const {
-        return boost::asio::buffer(buf_.data(), curr_);
+        return boost::asio::buffer(Begin(), Size());
     }
 
     uint8_t *get_data() {

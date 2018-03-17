@@ -190,6 +190,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
         sodium_increment(nonce_.data(), nonce_.size());
         processed_length += mlen + tag_len;
 
+        buf.PrepareCapacity(length_buf.value());
         ret = CipherDecrypt(
                 buf.End(), &mlen,
                 chunk_.data() + processed_length, ciphertext_length,

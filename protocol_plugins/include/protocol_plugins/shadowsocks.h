@@ -13,7 +13,7 @@ class ShadowsocksProtocol : public BasicProtocol {
     using CryptoContextGenerator = std::function<CryptoContextPtr(void)>;
 public:
     ShadowsocksProtocol(tcp::endpoint ep, CryptoContextGenerator generator)
-        : header_buf_(260UL),
+        : header_buf_(300UL),
           remote_endpoint_(std::move(ep)),
           crypto_context_(generator()) {
     }
