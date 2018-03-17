@@ -13,9 +13,11 @@
 
 class BasicProtocol {
     typedef boost::asio::ip::tcp tcp;
+protected:
     using resolve_args_type = std::pair<std::string, std::string>;
     using target_info_type = boost::variant<tcp::endpoint, resolve_args_type>;
     using next_stage = std::function<void(void)>;
+
 public:
     using wrap_function = std::function<ssize_t(Buffer &)>;
 
@@ -33,7 +35,7 @@ public:
     virtual bool GetResolveArgs(std::string &hostname, std::string &port) const;
     virtual bool NeedResolve() const { return need_resolve_; }
 
-private:
+protected:
     target_info_type target_;
     bool need_resolve_;
     bool initialized_;

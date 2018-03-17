@@ -13,7 +13,7 @@
 class Socks5ProxyServer {
     typedef boost::asio::ip::tcp tcp;
     using ProtocolPtr = std::unique_ptr<BasicProtocol>;
-    using ProtocolGenerator = std::function<ProtocolPtr()>;
+    using ProtocolGenerator = std::function<ProtocolPtr(void)>;
 public:
     Socks5ProxyServer(boost::asio::io_context &ctx, uint16_t port,
                       ProtocolGenerator protocol_generator)

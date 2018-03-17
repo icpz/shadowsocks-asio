@@ -11,6 +11,7 @@ list(APPEND BOOST_DEPS
 
 list(APPEND DEPS
      common_utils
+     crypto_utils
      ${BOOST_DEPS}
     )
 
@@ -18,6 +19,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 list(APPEND SOURCES
      src/basic_protocol.cc
+     src/shadowsocks.cc
     )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})

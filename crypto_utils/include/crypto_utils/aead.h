@@ -8,6 +8,7 @@
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
 #include <sodium.h>
+#include <mbedtls/md.h>
 
 #include "crypto_utils/cipher.h"
 
@@ -130,6 +131,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Encrypt(Buffer &buf) {
         ciphertext_length += clen;
         processed_length += plaintext_length;
     }
+    chunk_.erase(chunk_.begin(), chunk_.begin() + processed_length);
 
     if (ciphertext_length != buf.Size()) {
         LOG(FATAL) << "unexcepted ciphertext length: " << ciphertext_length
@@ -209,9 +211,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
                    << ", should be " << buf.Size();
     }
 
-    if (processed_length < chunk_.size()) {
-        chunk_.erase(chunk_.begin(), chunk_.begin() + processed_length);
-    }
+    chunk_.erase(chunk_.begin(), chunk_.begin() + processed_length);
 
     return plaintext_length;
 }
@@ -221,18 +221,22 @@ bool AeadCipher<key_len, nonce_len, tag_len>::DeriveSessionKey() {
     EVP_PKEY_CTX *ctx;
     size_t outlen = key_.size();
     bool result = true;
+    std::array<uint8_t, key_len> dkey;
+    crypto_derive_key(password_.data(), dkey.data(), key_len);
+
     ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
     result = (EVP_PKEY_derive_init(ctx) > 0)
           && (EVP_PKEY_CTX_set_hkdf_md(ctx, EVP_sha1()) > 0)
           && (EVP_PKEY_CTX_set1_hkdf_salt(ctx, salt_.data(), salt_.size()) > 0)
           && (EVP_PKEY_CTX_set1_hkdf_key(
                   ctx,
-                  (const uint8_t *)password_.data(),
-                  password_.size()
+                  dkey.data(),
+                  dkey.size()
               ) > 0)
           && (EVP_PKEY_CTX_add1_hkdf_info(ctx, (const uint8_t *)"ss-subkey", 9) > 0)
           && (EVP_PKEY_derive(ctx, key_.data(), &outlen) > 0);
     result = result && (outlen == key_.size());
+
     return result;
 }
 

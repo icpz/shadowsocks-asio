@@ -5,7 +5,9 @@
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 
-#include <protocol_plugins/basic_protocol.h>
+#include <protocol_plugins/shadowsocks.h>
+#include <crypto_utils/aead.h>
+
 #include "server.h"
 
 int main(int argc, char *argv[]) {
@@ -34,7 +36,14 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    Socks5ProxyServer server(ctx, port, std::bind(&GetProtocol<BasicProtocol>));
+    boost::asio::ip::tcp::endpoint ep(boost::asio::ip::make_address("127.0.0.1"), 59999);
+    using CryptoGeneratorType = std::function<std::unique_ptr<CryptoContext>()>;
+    using ProtocolGeneratorType = std::function<std::unique_ptr<BasicProtocol>()>;
+    CryptoGeneratorType CryptoGenerator = std::bind(GetCryptoContext<Chacha20Poly1305Ietf, boost::string_view>, "12345678");
+    ProtocolGeneratorType ProtocolGenerator = [ep, CryptoGenerator]() { return GetProtocol<ShadowsocksProtocol>(ep, CryptoGenerator); };
+    Socks5ProxyServer server(
+        ctx, port, ProtocolGenerator
+    );
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 

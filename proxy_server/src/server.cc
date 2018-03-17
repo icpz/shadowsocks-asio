@@ -42,7 +42,7 @@ public:
     }
 
     ~Session() {
-        LOG(TRACE) << "Session completed: " << client_.socket.remote_endpoint();
+        LOG(TRACE) << "Session completed";
     }
 
     void Start() {
@@ -307,7 +307,7 @@ private:
                             LOG(WARNING) << "Relay write unexcepted error: " << ec;
                             return;
                         }
-                        src.buf.DeQueue(valid_length);
+                        src.buf.Reset();
                         DoRelayStream(src, dest, std::move(wrapper));
                         TimerAgain(src);
                     }

@@ -4,6 +4,7 @@
 #include <utility>
 #include <memory>
 #include <type_traits>
+#include <mbedtls/md.h>
 
 #include <common_utils/buffer.h>
 
@@ -46,6 +47,8 @@ template<typename CipherType, typename ...Args>
 std::unique_ptr<CryptoContext> GetCryptoContext(Args&& ...args) {
     return std::make_unique<__HelperCryptoContext<CipherType>>(std::forward<Args>(args)...);
 }
+
+int crypto_derive_key(const char *pass, uint8_t *key, size_t key_len);
 
 #endif
 
