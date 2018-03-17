@@ -182,15 +182,16 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
                 nonce_.data(), key_.data()
         );
         if (ret) {
-            LOG(WARNING) << "CipherDecrypt error: " << ret;
+            LOG(WARNING) << "CipherDecrypt error while decrypting length: " << ret;
             return ret;
         }
+        processed_length += mlen + tag_len;
         ciphertext_length = length_buf.value() + tag_len;
         if (processed_length + ciphertext_length > chunk_.size()) {
+            processed_length -= mlen + tag_len;
             break;
         }
         sodium_increment(nonce_.data(), nonce_.size());
-        processed_length += mlen + tag_len;
 
         buf.PrepareCapacity(length_buf.value());
         ret = CipherDecrypt(
@@ -200,7 +201,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
                 nonce_.data(), key_.data()
         );
         if (ret) {
-            LOG(WARNING) << "CipherDecrypt error: " << ret;
+            LOG(WARNING) << "CipherDecrypt error while decrypting data: " << ret;
             return ret;
         }
         sodium_increment(nonce_.data(), nonce_.size());
