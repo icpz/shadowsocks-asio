@@ -4,6 +4,13 @@
 
 This is a simple port of shadowsocks.
 
+## TODO
+
+- ss-server
+- stream ciphers
+- friendly help message
+- cross-platform support
+
 ## License
 
 >lcdtyph <lcdtyph@gmail.com>
