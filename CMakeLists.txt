@@ -10,6 +10,6 @@ add_definitions(-DBOOST_ALL_DYN_LINK)
 
 add_subdirectory(common_utils)
 add_subdirectory(crypto_utils)
-add_subdirectory(protocol_plugins)
+add_subdirectory(protocol_hooks)
 add_subdirectory(client)
 

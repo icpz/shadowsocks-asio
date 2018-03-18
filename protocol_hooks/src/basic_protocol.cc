@@ -2,7 +2,7 @@
 #include <common_utils/common.h>
 #include <common_utils/socks5.h>
 
-#include "protocol_plugins/basic_protocol.h"
+#include "protocol_hooks/basic_protocol.h"
 
 using boost::asio::ip::tcp;
 

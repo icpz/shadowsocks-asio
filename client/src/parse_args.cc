@@ -4,7 +4,7 @@
 #include <boost/program_options.hpp>
 
 #include <crypto_utils/crypto.h>
-#include <protocol_plugins/shadowsocks.h>
+#include <protocol_hooks/shadowsocks.h>
 
 #include "parse_args.h"
 

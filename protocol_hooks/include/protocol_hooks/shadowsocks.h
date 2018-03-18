@@ -5,7 +5,7 @@
 #include <memory>
 #include <crypto_utils/cipher.h>
 
-#include "protocol_plugins/basic_protocol.h"
+#include "protocol_hooks/basic_protocol.h"
 
 class ShadowsocksProtocol : public BasicProtocol {
     typedef boost::asio::ip::tcp tcp;

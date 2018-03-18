@@ -290,7 +290,7 @@ private:
                     DoRelayStream(src, dest, std::move(wrapper));
                     return;
                 } else if (valid_length < 0) { // error occurs
-                    LOG(WARNING) << "Protocol plugin error";
+                    LOG(WARNING) << "Protocol hook error";
                     return;
                 }
                 boost::asio::async_write(dest.socket,
