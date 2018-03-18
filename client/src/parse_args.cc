@@ -30,6 +30,13 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level)
     bpo::notify(vm);
     if (vm.count("help")) {
         std::cout << desc << std::endl;
+        std::vector<std::string> methods;
+        factory->GetAllRegisteredNames(methods);
+        std::cout << "Available methods:\n   ";
+        for (auto &m : methods) {
+            std::cout << " " << m;
+        }
+        std::cout << std::endl;
         exit(0);
     }
 
