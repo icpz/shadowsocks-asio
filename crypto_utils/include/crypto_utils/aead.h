@@ -34,15 +34,13 @@ protected:
     virtual int CipherEncrypt(
                     void *c, size_t *clen,
                     const uint8_t *m, size_t mlen,
-                    const uint8_t *ad, size_t adlen,
-                    const uint8_t *n, const uint8_t *k
+                    const uint8_t *ad, size_t adlen
                 ) = 0;
 
     virtual int CipherDecrypt(
                     void *m, size_t *mlen,
                     const uint8_t *c, size_t clen,
-                    const uint8_t *ad, size_t adlen,
-                    const uint8_t *n, const uint8_t *k
+                    const uint8_t *ad, size_t adlen
                 ) = 0;
 
     const size_t kTagLength = tag_len;
@@ -84,8 +82,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Encrypt(Buffer &buf) {
         ret = CipherEncrypt(
                 buf.End(), &clen,
                 (uint8_t *)&length_buf, sizeof length_buf,
-                nullptr, 0,
-                nonce_.data(), key_.data()
+                nullptr, 0
         );
         if (ret) {
             LOG(WARNING) << "CipherEncrypt error while encrypting length: " << ret;
@@ -98,8 +95,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Encrypt(Buffer &buf) {
         ret = CipherEncrypt(
                 buf.End(), &clen,
                 chunk_.data() + processed_length, plaintext_length,
-                nullptr, 0,
-                nonce_.data(), key_.data()
+                nullptr, 0
         );
         if (ret) {
             LOG(WARNING) << "CipherEncrypt error while encrypting data" << ret;
@@ -155,8 +151,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
         ret = CipherDecrypt(
                 &length_buf, &mlen,
                 chunk_.data() + processed_length, ciphertext_length,
-                nullptr, 0,
-                nonce_.data(), key_.data()
+                nullptr, 0
         );
         if (ret) {
             LOG(WARNING) << "CipherDecrypt error while decrypting length: " << ret;
@@ -174,8 +169,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
         ret = CipherDecrypt(
                 buf.End(), &mlen,
                 chunk_.data() + processed_length, ciphertext_length,
-                nullptr, 0,
-                nonce_.data(), key_.data()
+                nullptr, 0
         );
         if (ret) {
             LOG(WARNING) << "CipherDecrypt error while decrypting data: " << ret;
