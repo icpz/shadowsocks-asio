@@ -10,6 +10,9 @@
     #define WARNING warning
     #define ERROR   error
     #define FATAL   fatal
+
+    void InitialLogLevel(int verbose);
+
 #endif // LOG
 
 #endif

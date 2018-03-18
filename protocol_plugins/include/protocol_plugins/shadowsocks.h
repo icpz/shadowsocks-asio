@@ -18,6 +18,14 @@ public:
           crypto_context_(generator()) {
     }
 
+    ShadowsocksProtocol(std::string host, uint16_t port, CryptoContextGenerator generator)
+        : header_buf_(300UL),
+          remote_host_(std::move(host)),
+          remote_port_(std::to_string(port)),
+          crypto_context_(generator()) {
+        need_resolve_ = true;
+    }
+
     ~ShadowsocksProtocol() { }
 
     uint8_t ParseHeader(Buffer &buf);
@@ -32,12 +40,18 @@ public:
     void DoInitializeProtocol(tcp::socket &socket, BasicProtocol::next_stage next);
 
     tcp::endpoint GetEndpoint() const { return remote_endpoint_; }
-    bool GetResolveArgs(std::string &hostname, std::string &port) const { return false; }
-    bool NeedResolve() const { return false; }
+    bool GetResolveArgs(std::string &hostname, std::string &port) const {
+        if (!NeedResolve()) return false;
+        hostname = remote_host_;
+        port = remote_port_;
+        return true;
+    }
 
 private:
     Buffer header_buf_;
     tcp::endpoint remote_endpoint_;
+    std::string remote_host_;
+    std::string remote_port_;
     CryptoContextPtr crypto_context_;
 };
 
