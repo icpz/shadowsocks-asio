@@ -45,7 +45,7 @@ size_t __BytesToKey(const std::string &password, uint8_t *key, size_t key_len) {
     int addmd;
     unsigned int i, j, mds;
 
-    mds = EVP_MD_CTX_size(ctx);
+    mds = EVP_MD_size(md);
 
     for (j = 0, addmd = 0; j < key_len; addmd++) {
         EVP_DigestInit_ex(ctx, md, NULL);

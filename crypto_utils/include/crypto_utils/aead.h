@@ -46,6 +46,7 @@ protected:
                 ) = 0;
 
     bool initialized_;
+    const size_t kTagLength = tag_len;
     std::vector<uint8_t> chunk_;
     std::array<uint8_t, key_len> key_;
     std::array<uint8_t, key_len> salt_;
@@ -87,7 +88,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Encrypt(Buffer &buf) {
                 nonce_.data(), key_.data()
         );
         if (ret) {
-            LOG(WARNING) << "CipherEncrypt error: " << ret;
+            LOG(WARNING) << "CipherEncrypt error while encrypting length: " << ret;
             return ret;
         }
         sodium_increment(nonce_.data(), nonce_.size());
@@ -101,7 +102,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Encrypt(Buffer &buf) {
                 nonce_.data(), key_.data()
         );
         if (ret) {
-            LOG(WARNING) << "CipherEncrypt error: " << ret;
+            LOG(WARNING) << "CipherEncrypt error while encrypting data" << ret;
             return ret;
         }
         sodium_increment(nonce_.data(), nonce_.size());

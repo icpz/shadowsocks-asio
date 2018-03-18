@@ -7,7 +7,6 @@
 #include <boost/program_options.hpp>
 
 #include <protocol_plugins/shadowsocks.h>
-#include <crypto_utils/aead.h>
 #include <crypto_utils/crypto.h>
 
 #include "server.h"
