@@ -45,8 +45,8 @@ protected:
                     const uint8_t *n, const uint8_t *k
                 ) = 0;
 
-    bool initialized_;
     const size_t kTagLength = tag_len;
+    bool initialized_;
     std::vector<uint8_t> chunk_;
     std::array<uint8_t, key_len> key_;
     std::array<uint8_t, key_len> salt_;
