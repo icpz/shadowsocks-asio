@@ -7,6 +7,7 @@ using boost::asio::ip::tcp;
 
 uint8_t ShadowsocksProtocol::ParseHeader(Buffer &buf) {
     uint8_t reply = BasicProtocol::ParseHeader(buf);
+    BasicProtocol::need_resolve_ = need_resolve_;
     if (reply != socks5::SUCCEEDED_REP) {
         return reply;
     }

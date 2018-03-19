@@ -16,6 +16,7 @@ public:
         : header_buf_(300UL),
           remote_endpoint_(std::move(ep)),
           crypto_context_(generator()) {
+        need_resolve_ = false;
     }
 
     ShadowsocksProtocol(std::string host, uint16_t port, CryptoContextGenerator generator)
@@ -48,6 +49,7 @@ public:
     }
 
 private:
+    bool need_resolve_;
     Buffer header_buf_;
     tcp::endpoint remote_endpoint_;
     std::string remote_host_;
