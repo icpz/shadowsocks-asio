@@ -82,9 +82,8 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
             p->plugin = plugin;
             p->remote_address = server_host;
             p->remote_port = server_port;
-            p->local_address = "0.0.0.0"; /* should be bind_address here */
-            p->local_port = *bind_port;
-            *bind_port = GetFreePort();
+            p->local_address = "127.0.0.1";
+            p->local_port = GetFreePort();
             if (*bind_port == 0) {
                 std::cerr << "Fatal error: cannot get a freedom port" << std::endl;
                 exit(-1);
@@ -94,7 +93,7 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
             }
 
             server_need_resolve = false;
-            server_host = p->local_address;
+            server_address = boost::asio::ip::make_address(p->local_address);
             server_port = p->local_port;
         }
     }
@@ -110,6 +109,7 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
     }
     if (!server_need_resolve) {
         boost::asio::ip::tcp::endpoint ep(server_address, server_port);
+        LOG(TRACE) << "final endpoint: " << ep;
         return  [ep, g = std::move(CryptoGenerator)]() {
                     return GetProtocol<ShadowsocksProtocol>(ep, *g);
                 };
