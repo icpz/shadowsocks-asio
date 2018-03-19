@@ -10,7 +10,7 @@
 
 namespace bpo = boost::program_options;
 
-auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level)
+auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plugin *p)
     -> std::function<std::unique_ptr<BasicProtocol>(void)> {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Socks5 Proxy Server");
@@ -22,6 +22,8 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level)
         ("method,m", bpo::value<std::string>(), "Cipher method")
         ("password,k", bpo::value<std::string>(), "Password")
         ("config-file,c", bpo::value<std::string>(), "Configuration file")
+        ("plugin", bpo::value<std::string>(), "Plugin executable name")
+        ("plugin-opts", bpo::value<std::string>(), "Plugin options")
         ("verbose,v", bpo::value<int>()->default_value(1),"Verbose log")
         ("help,h", "Print this help message");
 
@@ -72,6 +74,30 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level)
     std::string password = vm["password"].as<std::string>();
 
     *log_level = vm["verbose"].as<int>();
+
+    if (vm.count("plugin")) {
+        std::string plugin = vm["plugin"].as<std::string>();
+        if (!plugin.empty()) {
+            p->enable = true;
+            p->plugin = plugin;
+            p->remote_address = server_host;
+            p->remote_port = server_port;
+            p->local_address = "0.0.0.0"; /* should be bind_address here */
+            p->local_port = *bind_port;
+            *bind_port = GetFreePort();
+            if (*bind_port == 0) {
+                std::cerr << "Fatal error: cannot get a freedom port" << std::endl;
+                exit(-1);
+            }
+            if (vm.count("plugin-opts")) {
+                p->plugin_options = vm["plugin-opts"].as<std::string>();
+            }
+
+            server_need_resolve = false;
+            server_host = p->local_address;
+            server_port = p->local_port;
+        }
+    }
 
     if (!vm.count("method")) {
         std::cerr << "Please specify a cipher method using -m option" << std::endl;

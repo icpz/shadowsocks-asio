@@ -13,6 +13,7 @@ list(APPEND BOOST_DEPS
 list(APPEND DEPS
      common_utils
      -force_load crypto_utils
+     plugin_utils
      protocol_hooks
      ${BOOST_DEPS}
     )

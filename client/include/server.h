@@ -24,9 +24,13 @@ public:
         DoAccept();
     }
 
-    void stop() {
+    void Stop() {
         acceptor_.cancel();
         running_ = false;
+    }
+
+    bool Stopped() const {
+        return !running_;
     }
 
 private:
