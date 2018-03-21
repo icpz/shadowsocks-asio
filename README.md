@@ -7,9 +7,11 @@ This is a simple port of shadowsocks.
 ## TODO
 
 - ss-server
-- stream ciphers
+- ~~stream ciphers~~ (done)
 - friendly help message
 - cross-platform support
+- udp relay
+- obfs plugin
 
 ## License
 
