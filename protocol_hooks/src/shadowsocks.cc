@@ -5,14 +5,14 @@
 
 using boost::asio::ip::tcp;
 
-uint8_t ShadowsocksProtocol::ParseHeader(Buffer &buf) {
-    uint8_t reply = BasicProtocol::ParseHeader(buf);
+uint8_t ShadowsocksProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
+    uint8_t reply = BasicProtocol::ParseHeader(buf, start_offset);
     BasicProtocol::need_resolve_ = need_resolve_;
     if (reply != socks5::SUCCEEDED_REP) {
         return reply;
     }
-    header_buf_.Append(buf.Size() - 3);
-    std::copy(buf.Begin() + 3, buf.End(), header_buf_.Begin());
+    header_buf_.Append(buf.Size() - start_offset);
+    std::copy(buf.Begin() + start_offset, buf.End(), header_buf_.Begin());
     return reply;
 }
 

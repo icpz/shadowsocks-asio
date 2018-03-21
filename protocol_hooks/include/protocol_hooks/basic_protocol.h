@@ -24,7 +24,7 @@ public:
     BasicProtocol() : need_resolve_(false), initialized_(false) { }
     virtual ~BasicProtocol() { }
 
-    virtual uint8_t ParseHeader(Buffer &buf);
+    virtual uint8_t ParseHeader(Buffer &buf, size_t start_offset);
     virtual ssize_t Wrap(Buffer &buf) { return buf.Size(); }
     virtual ssize_t UnWrap(Buffer &buf) { return buf.Size(); }
     virtual void DoInitializeProtocol(tcp::socket &socket, next_stage next) {

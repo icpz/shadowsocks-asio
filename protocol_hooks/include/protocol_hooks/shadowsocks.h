@@ -29,7 +29,7 @@ public:
 
     ~ShadowsocksProtocol() { }
 
-    uint8_t ParseHeader(Buffer &buf);
+    uint8_t ParseHeader(Buffer &buf, size_t start_offset);
     ssize_t Wrap(Buffer &buf) {
         return crypto_context_->Encrypt(buf);
     }

@@ -127,6 +127,7 @@ private:
             [this, self](bsys::error_code ec, size_t len) {
                 if (ec) {
                     LOG(WARNING) << "Unexcepted error: " << ec;
+                    client_.CancelAll();
                     return;
                 }
                 client_.timer.cancel();
@@ -142,10 +143,17 @@ private:
                 auto *hdr = (socks5::Request *)(client_.buf.GetData());
                 if (hdr->ver != socks5::VERSION) {
                     LOG(WARNING) << "Unsupport socks version: " << (uint32_t)hdr->ver;
+                    client_.CancelAll();
                     return;
                 }
 
-                uint8_t reply = protocol_->ParseHeader(client_.buf);
+                if (hdr->cmd != socks5::CONNECT_CMD) {
+                    LOG(WARNING) << "Unsupport socks command: " << (uint32_t)hdr->cmd;
+                    DoWriteSocks5Reply(socks5::CMD_NOT_SUPPORTED_REP);
+                    return;
+                }
+
+                uint8_t reply = protocol_->ParseHeader(client_.buf, 3);
 
                 if (reply != socks5::SUCCEEDED_REP) {
                     LOG(WARNING) << "Unsuccessful reply: " << (uint32_t)reply;
@@ -247,6 +255,8 @@ private:
                         remote_.socket,
                         std::bind(&Session::StartStream, self)
                     );
+                } else {
+                    client_.CancelAll();
                 }
             }
         );
@@ -291,6 +301,8 @@ private:
                     return;
                 } else if (valid_length < 0) { // error occurs
                     LOG(WARNING) << "Protocol hook error";
+                    src.CancelAll();
+                    dest.CancelAll();
                     return;
                 }
                 boost::asio::async_write(dest.socket,

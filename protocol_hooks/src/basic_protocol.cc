@@ -6,16 +6,11 @@
 
 using boost::asio::ip::tcp;
 
-uint8_t BasicProtocol::ParseHeader(Buffer &buf) {
-    auto *hdr = (socks5::Request *)(buf.GetData());
+uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
+    auto *hdr = (socks5::Request *)(buf.GetData() + start_offset - 3);
     std::string address_str;
     boost::asio::ip::address address;
     size_t port_offset;
-
-    if (hdr->cmd != socks5::CONNECT_CMD) {
-        LOG(DEBUG) << "Unsupport command: " << hdr->cmd;
-        return socks5::CMD_NOT_SUPPORTED_REP;
-    }
 
     switch(hdr->atype) {
     case socks5::IPV4_ATYPE:
