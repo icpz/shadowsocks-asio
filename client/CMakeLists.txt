@@ -3,6 +3,8 @@ project(ss-client)
 
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(Threads REQUIRED)
+
 list(APPEND BOOST_DEPS
      boost_log-mt
      boost_thread-mt
@@ -12,7 +14,7 @@ list(APPEND BOOST_DEPS
 
 list(APPEND DEPS
      common_utils
-     -force_load crypto_utils
+     crypto_utils
      plugin_utils
      protocol_hooks
      ${BOOST_DEPS}
@@ -27,5 +29,5 @@ list(APPEND SOURCES
     )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_link_libraries(${PROJECT_NAME} ${DEPS})
+target_link_libraries(${PROJECT_NAME} ${DEPS} Threads::Threads)
 

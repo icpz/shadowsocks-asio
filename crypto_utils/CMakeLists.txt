@@ -3,13 +3,19 @@ project(crypto_utils)
 
 set(CMAKE_CXX_STANDARD 14)
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if (APPLE)
     set(ENV{PKG_CONFIG_PATH} "/usr/local/opt/openssl@1.1/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-endif()
-find_package(PkgConfig REQUIRED)
+    find_package(PkgConfig REQUIRED)
 
-pkg_search_module(LIBCRYPTO REQUIRED libcrypto)
-pkg_search_module(LIBSODIUM REQUIRED libsodium)
+    pkg_search_module(LIBCRYPTO REQUIRED libcrypto>=1.1)
+    pkg_search_module(LIBSODIUM REQUIRED libsodium)
+
+    include_directories(${LIBCRYPTO_INCLUDE_DIRS})
+    include_directories(${LIBSODIUM_INCLUDE_DIRS})
+else()
+    set(LIBCRYPTO_LDFLAGS "-lcrypto")
+    set(LIBSODIUM_LDFLAGS "-lsodium")
+endif()
 
 list(APPEND BOOST_DEPS
      boost_log-mt
@@ -24,8 +30,6 @@ list(APPEND DEPS
      ${BOOST_DEPS}
     )
 
-include_directories(${LIBCRYPTO_INCLUDE_DIRS})
-include_directories(${LIBSODIUM_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 list(APPEND SOURCES
@@ -36,7 +40,7 @@ list(APPEND SOURCES
      src/aes_cfb_family.cc
     )
 
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(${PROJECT_NAME} SHARED ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

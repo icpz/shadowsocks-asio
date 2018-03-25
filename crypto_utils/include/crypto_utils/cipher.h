@@ -59,7 +59,7 @@ std::unique_ptr<CryptoContext> GetCryptoContext(Args&& ...args) {
 }
 
 template<typename CipherType>
-auto MakeCryptoContextGenerator(std::string password) {
+decltype(auto) MakeCryptoContextGenerator(std::string password) {
     static_assert(std::is_base_of<Cipher, CipherType>::value, "The cipher type must inherit from Cipher");
     std::vector<uint8_t> master_key;
     CipherType::DeriveKeyFromPassword(std::move(password), master_key);

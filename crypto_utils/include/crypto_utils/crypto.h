@@ -47,7 +47,9 @@ public:
         auto factory = CryptoContextGeneratorFactory::Instance();
         factory->RegisterContext(
             name,
-            std::bind(&MakeCryptoContextGenerator<Cipher>, std::placeholders::_1)
+            [](std::string name) {
+                return MakeCryptoContextGenerator<Cipher>(name);
+            }
         );
     }
 };
