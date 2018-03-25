@@ -16,6 +16,5 @@ add_subdirectory(common_utils)
 add_subdirectory(crypto_utils)
 add_subdirectory(plugin_utils)
 add_subdirectory(protocol_hooks)
-add_subdirectory(client)
-add_subdirectory(server)
+add_subdirectory(shadowsocks)
 
