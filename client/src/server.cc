@@ -285,6 +285,8 @@ private:
                                 return;
                             }
                             LOG(WARNING) << "Relay write unexcepted error: " << ec;
+                            src.CancelAll();
+                            dest.CancelAll();
                             return;
                         }
                         dest.timer.cancel();
@@ -300,7 +302,11 @@ private:
 
     void TimerExpiredCallBack(Peer &peer, bsys::error_code ec) {
         if (ec != boost::asio::error::operation_aborted) {
-            LOG(DEBUG) << peer.socket.remote_endpoint() << " TTL expired";
+            if (peer.socket.is_open()) {
+                LOG(DEBUG) << peer.socket.remote_endpoint() << " TTL expired";
+            } else {
+                LOG(WARNING) << "timer of closed socket expired!";
+            }
             client_.CancelAll();
             remote_.CancelAll();
             client_.socket.close();
