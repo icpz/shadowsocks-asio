@@ -7,27 +7,26 @@
 
 #include "protocol_hooks/basic_protocol.h"
 
-class ShadowsocksProtocol : public BasicProtocol {
+class ShadowsocksClient : public BasicProtocol {
     typedef boost::asio::ip::tcp tcp;
     using CryptoContextPtr = std::unique_ptr<CryptoContext>;
-    using CryptoContextGenerator = std::function<CryptoContextPtr(void)>;
 public:
-    ShadowsocksProtocol(tcp::endpoint ep, CryptoContextGenerator generator)
+    ShadowsocksClient(tcp::endpoint ep, CryptoContextPtr crypto_context)
         : header_buf_(300UL),
           remote_endpoint_(std::move(ep)),
-          crypto_context_(generator()) {
+          crypto_context_(std::move(crypto_context)) {
         need_resolve_ = false;
     }
 
-    ShadowsocksProtocol(std::string host, uint16_t port, CryptoContextGenerator generator)
+    ShadowsocksClient(std::string host, uint16_t port, CryptoContextPtr crypto_context)
         : header_buf_(300UL),
           remote_host_(std::move(host)),
           remote_port_(std::to_string(port)),
-          crypto_context_(generator()) {
+          crypto_context_(std::move(crypto_context)) {
         need_resolve_ = true;
     }
 
-    ~ShadowsocksProtocol() { }
+    ~ShadowsocksClient() { }
 
     uint8_t ParseHeader(Buffer &buf, size_t start_offset);
     ssize_t Wrap(Buffer &buf) {
@@ -46,6 +45,10 @@ public:
         hostname = remote_host_;
         port = remote_port_;
         return true;
+    }
+
+    bool NeedResolve() const {
+        return need_resolve_;
     }
 
 private:

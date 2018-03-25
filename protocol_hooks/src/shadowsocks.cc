@@ -5,9 +5,8 @@
 
 using boost::asio::ip::tcp;
 
-uint8_t ShadowsocksProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
+uint8_t ShadowsocksClient::ParseHeader(Buffer &buf, size_t start_offset) {
     uint8_t reply = BasicProtocol::ParseHeader(buf, start_offset);
-    BasicProtocol::need_resolve_ = need_resolve_;
     if (reply != socks5::SUCCEEDED_REP) {
         return reply;
     }
@@ -16,7 +15,7 @@ uint8_t ShadowsocksProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
     return reply;
 }
 
-void ShadowsocksProtocol::DoInitializeProtocol(tcp::socket &socket, BasicProtocol::next_stage next) {
+void ShadowsocksClient::DoInitializeProtocol(tcp::socket &socket, BasicProtocol::next_stage next) {
     Wrap(header_buf_);
     boost::asio::async_write(
         socket, header_buf_.GetConstBuffer(),

@@ -232,7 +232,7 @@ private:
                     client_.timer.cancel();
                     client_.buf.Reset();
                     protocol_->DoInitializeProtocol(
-                        remote_.socket,
+                        remote_,
                         std::bind(&Session::StartStream, self)
                     );
                 } else {
@@ -254,7 +254,7 @@ private:
                                 std::placeholders::_1));
     }
 
-    void DoRelayStream(Peer &src, Peer &dest, BasicProtocol::wrap_function wrapper) {
+    void DoRelayStream(Peer &src, Peer &dest, BasicProtocol::Wrapper wrapper) {
         auto self(shared_from_this());
         src.socket.async_read_some(
             src.buf.GetBuffer(),

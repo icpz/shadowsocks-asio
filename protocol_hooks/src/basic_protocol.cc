@@ -12,6 +12,7 @@ uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
     boost::asio::ip::address address;
     size_t port_offset;
 
+    bool need_resolve = false;;
     switch(hdr->atype) {
     case socks5::IPV4_ATYPE:
         std::array<uint8_t, 4> ipv4_buf;
@@ -21,7 +22,7 @@ uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
         break;
 
     case socks5::DOMAIN_ATYPE:
-        need_resolve_ = true;
+        need_resolve = true;
         port_offset = hdr->variable_field[0];
         std::copy_n(&hdr->variable_field[1], port_offset,
                     std::back_inserter(address_str));
@@ -40,10 +41,12 @@ uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
         return socks5::ATYPE_NOT_SUPPORTED_REP;
     }
     uint16_t port = boost::endian::big_to_native(*(uint16_t *)(&hdr->variable_field[port_offset]));
-    if (need_resolve_) {
-        target_ = std::make_pair(std::move(address_str), std::to_string(port));
+    header_length_ = port_offset + 3; // one for atype and two for port
+
+    if (need_resolve) {
+        target_.SetTarget(std::move(address_str), port);
     } else {
-        target_ = tcp::endpoint{ address, port };
+        target_.SetTarget(address, port);
     }
 
     return socks5::SUCCEEDED_REP;
@@ -51,14 +54,13 @@ uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
 
 bool BasicProtocol::GetResolveArgs(std::string &hostname, std::string &port) const {
     if (!NeedResolve()) return false;
-    auto resolve_args = boost::get<resolve_args_type>(target_);
-    hostname = resolve_args.first;
-    port = resolve_args.second;
+    hostname = target_.GetHostname();
+    port = std::to_string(target_.GetPort());
     return true;
 }
 
 tcp::endpoint BasicProtocol::GetEndpoint() const {
     if (NeedResolve()) return tcp::endpoint();
-    return boost::get<tcp::endpoint>(target_);
+    return tcp::endpoint{ target_.GetIp(), target_.GetPort() };
 }
 

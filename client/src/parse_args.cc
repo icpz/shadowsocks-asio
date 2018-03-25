@@ -111,13 +111,13 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
         boost::asio::ip::tcp::endpoint ep(server_address, server_port);
         LOG(TRACE) << "final endpoint: " << ep;
         return  [ep, g = std::move(CryptoGenerator)]() {
-                    return GetProtocol<ShadowsocksProtocol>(ep, *g);
+                    return GetProtocol<ShadowsocksClient>(ep, (*g)());
                 };
     }
     return [s = std::move(server_host),
             p = server_port,
             g = std::move(CryptoGenerator)]() {
-               return GetProtocol<ShadowsocksProtocol>(s, p, *g);
+               return GetProtocol<ShadowsocksClient>(s, p, (*g)());
            };
 }
 

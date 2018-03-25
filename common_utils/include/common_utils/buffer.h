@@ -22,10 +22,16 @@ public:
     }
 
     template<class Container>
-    void AppendData(const Container cont) {
+    void AppendData(const Container &cont) {
         PrepareCapacity(cont.size());
         std::copy(std::begin(cont), std::end(cont), End());
         Append(cont.size());
+    }
+
+    void AppendData(const Buffer &buf) {
+        PrepareCapacity(buf.Size());
+        std::copy(buf.Begin(), buf.End(), End());
+        Append(buf.Size());
     }
 
     void Reset(size_t new_len = 0) {
