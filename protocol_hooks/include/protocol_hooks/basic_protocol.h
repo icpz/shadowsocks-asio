@@ -15,7 +15,7 @@ class TargetInfo {
 public:
     using IpAddress = boost::asio::ip::address;
     bool NeedResolve() const {
-        return state_ == 1;
+        return state_ == 2;
     }
 
     bool IsEmpty() const {

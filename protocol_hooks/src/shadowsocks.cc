@@ -30,6 +30,7 @@ void ShadowsocksClient::DoInitializeProtocol(Peer &peer, BasicProtocol::NextStag
 }
 
 void ShadowsocksServer::DoReadHeader(Peer &peer, NextStage next, size_t at_least) {
+    LOG(INFO) << "start reading protocol header";
     boost::asio::async_read(
         peer.socket,
         peer.buf.GetBuffer(),
@@ -40,8 +41,10 @@ void ShadowsocksServer::DoReadHeader(Peer &peer, NextStage next, size_t at_least
                 return;
             }
 
+            peer.buf.Append(length);
             ssize_t valid_length = UnWrap(peer.buf);
             if (valid_length == 0) {
+                LOG(TRACE) << length << " bytes read, but need more";
                 DoReadHeader(peer, std::move(next));
                 return;
             } else if (valid_length < 0) {
