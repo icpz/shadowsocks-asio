@@ -6,12 +6,12 @@ This is a simple port of shadowsocks.
 
 ## TODO
 
-- ss-server
+- ~~ss-server~~ (done)
 - ~~stream ciphers~~ (done)
 - friendly help message
 - cross-platform support
 - udp relay
-- obfs plugin
+- ~~obfs plugin~~ (done)
 
 ## License
 
