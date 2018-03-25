@@ -145,12 +145,11 @@ private:
                 if (protocol_->NeedResolve()) {
                     std::string hostname, port;
                     protocol_->GetResolveArgs(hostname, port);
-                    LOG(TRACE) << "Resolving to " << hostname << ":" << port;
                     DoResolveRemote(std::move(hostname), std::move(port));
                 } else {
                     tcp::endpoint ep = protocol_->GetEndpoint();
                     LOG(TRACE) << "Connecting to " << ep;
-                    DoConnectRemote(ep);
+                    DoConnectRemote(std::array<tcp::endpoint, 1>{ ep });
                 }
             }
         );
@@ -159,40 +158,25 @@ private:
 
     void DoResolveRemote(std::string host, std::string port) {
         auto self(shared_from_this());
-        resolver_.async_resolve(host, port,
-            [this, self](bsys::error_code ec, tcp::resolver::iterator itr) {
+        LOG(TRACE) << "Resolving to " << host << ":" << port;
+        resolver_.async_resolve(
+            host, port,
+            [this, self](bsys::error_code ec, tcp::resolver::results_type results) {
                 if (ec) {
                     LOG(DEBUG) << "Unable to resolve: " << ec;
                     DoWriteSocks5Reply(socks5::HOST_UNREACHABLE_REP);
                     return;
                 }
-                DoConnectRemote(itr);
+                DoConnectRemote(std::move(results));
             }
         );
     }
 
-    void DoConnectRemote(tcp::resolver::iterator itr) {
+    template<class EndpointSequence>
+    void DoConnectRemote(const EndpointSequence &results) {
         auto self(shared_from_this());
-        boost::asio::async_connect(remote_.socket, itr,
-            [this, self](bsys::error_code ec, tcp::resolver::iterator itr) {
-                if (ec || itr == tcp::resolver::iterator()) {
-                    LOG(DEBUG) << "Cannot connect to remote: " << ec;
-                    DoWriteSocks5Reply((itr == tcp::resolver::iterator()
-                                        ? socks5::CONN_REFUSED_REP
-                                        : socks5::NETWORK_UNREACHABLE_REP));
-                    return;
-                }
-                LOG(DEBUG) << "Connected to remote " << itr->host_name();
-                client_.timer.cancel();
-                DoWriteSocks5Reply(socks5::SUCCEEDED_REP);
-            }
-        );
-        TimerAgain(client_);
-    }
-
-    void DoConnectRemote(tcp::endpoint ep) {
-        auto self(shared_from_this());
-        boost::asio::async_connect(remote_.socket, std::array<tcp::endpoint, 1>{ ep },
+        boost::asio::async_connect(
+            remote_.socket, results,
             [this, self](bsys::error_code ec, tcp::endpoint ep) {
                 if (ec) {
                     if (ec == boost::asio::error::operation_aborted) {
@@ -221,7 +205,9 @@ private:
         client_.buf.Reset(
                 socks5::Reply::FillBoundAddress(client_.buf.GetData(),
                                                 remote_.socket.local_endpoint()));
-        boost::asio::async_write(client_.socket, client_.buf.GetConstBuffer(),
+        boost::asio::async_write(
+            client_.socket,
+            client_.buf.GetConstBuffer(),
             [this, self, reply](bsys::error_code ec, size_t len) {
                 if (ec) {
                     LOG(WARNING) << "Unexcepted write error " << ec;
@@ -271,6 +257,8 @@ private:
                         return;
                     }
                     LOG(WARNING) << "Relay read unexcepted error: " << ec;
+                    src.CancelAll();
+                    dest.CancelAll();
                     return;
                 }
                 src.timer.cancel();
