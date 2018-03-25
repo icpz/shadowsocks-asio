@@ -5,40 +5,20 @@
 #include <boost/log/trivial.hpp>
 #include <boost/endian/conversion.hpp>
 
+#include <common_utils/common.h>
+#include <common_utils/util.h>
+
 #include "server.h"
 
 using boost::asio::ip::tcp;
 namespace bsys = boost::system;
 
 class Session : public std::enable_shared_from_this<Session> {
-    struct Peer {
-        Peer(tcp::socket socket, size_t ttl)
-            : socket(std::move(socket)),
-              ttl(ttl),
-              timer(socket.get_executor().context()) {
-        }
-
-        Peer(boost::asio::io_context &ctx, size_t ttl)
-            : socket(ctx), ttl(ttl), timer(ctx) {
-        }
-
-        void CancelAll() {
-            socket.cancel();
-            timer.cancel();
-        }
-
-        tcp::socket socket;
-        Buffer buf;
-        boost::posix_time::millisec ttl;
-        boost::asio::deadline_timer timer;
-    };
-
 public:
-
     Session(tcp::socket socket, std::unique_ptr<BasicProtocol> protocol, size_t ttl = 5000)
-        : context(socket.get_executor().context()),
-          client_(std::move(socket), ttl), remote_(context, ttl),
-          resolver_(context), protocol_(std::move(protocol)) {
+        : context_(socket.get_executor().context()),
+          client_(std::move(socket), ttl), remote_(context_, ttl),
+          resolver_(context_), protocol_(std::move(protocol)) {
     }
 
     ~Session() {
@@ -333,7 +313,10 @@ private:
     void TimerExpiredCallBack(Peer &peer, bsys::error_code ec) {
         if (ec != boost::asio::error::operation_aborted) {
             LOG(DEBUG) << peer.socket.remote_endpoint() << " TTL expired";
-            peer.socket.close();
+            client_.CancelAll();
+            remote_.CancelAll();
+            client_.socket.close();
+            remote_.socket.close();
         }
     }
 
@@ -348,7 +331,7 @@ private:
         );
     }
 
-    boost::asio::io_context &context;
+    boost::asio::io_context &context_;
     Peer client_;
     Peer remote_;
     tcp::resolver resolver_;

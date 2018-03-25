@@ -1,14 +1,10 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
-#include <cstdint>
 #include <boost/asio.hpp>
 
 #include <common_utils/common.h>
-#include <common_utils/socks5.h>
-#include <common_utils/buffer.h>
 #include <protocol_hooks/basic_protocol.h>
-
 
 class Socks5ProxyServer {
     typedef boost::asio::ip::tcp tcp;
