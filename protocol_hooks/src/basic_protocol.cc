@@ -40,7 +40,9 @@ uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
         LOG(DEBUG) << "Unsupport address type: " << hdr->atype;
         return socks5::ATYPE_NOT_SUPPORTED_REP;
     }
-    uint16_t port = boost::endian::big_to_native(*(uint16_t *)(&hdr->variable_field[port_offset]));
+    uint16_t port;
+    memcpy(&port, &hdr->variable_field[port_offset], sizeof port);
+    boost::endian::big_to_native_inplace(port);
     header_length_ = port_offset + 3; // one for atype and two for port
 
     if (need_resolve) {
