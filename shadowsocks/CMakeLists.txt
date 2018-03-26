@@ -5,13 +5,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(Threads REQUIRED)
 
-list(APPEND BOOST_DEPS
-     boost_log-mt
-     boost_thread-mt
-     boost_program_options-mt
-     boost_system-mt
-    )
-
 list(APPEND DEPS
      common_utils
      crypto_utils

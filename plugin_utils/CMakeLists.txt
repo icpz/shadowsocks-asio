@@ -4,9 +4,8 @@ project(plugin_utils)
 set(CMAKE_CXX_STANDARD 14)
 
 list(APPEND DEPS
-     boost_system-mt
-     boost_filesystem-mt
      common_utils
+     ${BOOST_DEPS}
     )
 
 list(APPEND SOURCES

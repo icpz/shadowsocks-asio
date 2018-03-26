@@ -3,12 +3,6 @@ project(protocol_hooks)
 
 set(CMAKE_CXX_STANDARD 14)
 
-list(APPEND BOOST_DEPS
-     boost_log-mt
-     boost_thread-mt
-     boost_system-mt
-    )
-
 list(APPEND DEPS
      common_utils
      crypto_utils

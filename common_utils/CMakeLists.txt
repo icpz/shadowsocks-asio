@@ -3,12 +3,6 @@ project(common_utils)
 
 set(CMAKE_CXX_STANDARD 14)
 
-list(APPEND BOOST_DEPS
-     boost_log-mt
-     boost_thread-mt
-     boost_system-mt
-    )
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 list(APPEND SOURCES

@@ -10,6 +10,14 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
+list(APPEND BOOST_DEPS
+    boost_log-mt
+    boost_system-mt
+    boost_thread-mt
+    boost_filesystem-mt
+    boost_program_options-mt
+    )
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 add_subdirectory(common_utils)
