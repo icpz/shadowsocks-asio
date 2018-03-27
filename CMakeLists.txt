@@ -9,11 +9,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 list(APPEND COMMON_DEPS
-    boost_system-mt
-    boost_filesystem-mt
-    boost_program_options-mt
-    glog
-    gflags
+     boost_system
+     glog
+     gflags
     )
 
 if(WINDOWS)
@@ -23,8 +21,6 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 add_subdirectory(common_utils)
-add_subdirectory(crypto_utils)
-add_subdirectory(plugin_utils)
 add_subdirectory(protocol_hooks)
 add_subdirectory(shadowsocks)
 

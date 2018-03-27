@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 list(APPEND DEPS
      common_utils
+     boost_filesystem
      ${COMMON_DEPS}
     )
 

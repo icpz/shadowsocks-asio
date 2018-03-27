@@ -1,7 +1,7 @@
 
 #include <common_utils/socks5.h>
 
-#include "protocol_hooks/shadowsocks.h"
+#include "ss_proto/shadowsocks.h"
 
 using boost::asio::ip::tcp;
 

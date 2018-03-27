@@ -4,7 +4,7 @@
 #include <boost/program_options.hpp>
 
 #include <crypto_utils/crypto.h>
-#include <protocol_hooks/shadowsocks.h>
+#include <ss_proto/shadowsocks.h>
 
 #include "parse_args.h"
 
@@ -84,7 +84,7 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
             p->remote_port = server_port;
             p->local_address = "127.0.0.1";
             p->local_port = GetFreePort();
-            if (*bind_port == 0) {
+            if (p->local_port == 0) {
                 std::cerr << "Fatal error: cannot get a freedom port" << std::endl;
                 exit(-1);
             }
