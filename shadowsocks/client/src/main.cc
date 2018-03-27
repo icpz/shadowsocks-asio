@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 
     auto ProtocolGenerator = ParseArgs(argc, argv, &bind_port, &log_level, &plugin);
 
-    InitialLogLevel(log_level);
+    InitialLogLevel(argv[0], log_level);
 
     boost::asio::io_context ctx;
 

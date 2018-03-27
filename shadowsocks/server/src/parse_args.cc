@@ -22,7 +22,7 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
         ("config-file,c", bpo::value<std::string>(), "Configuration file")
         ("plugin", bpo::value<std::string>(), "Plugin executable name")
         ("plugin-opts", bpo::value<std::string>(), "Plugin options")
-        ("verbose,v", bpo::value<int>()->default_value(1),"Verbose log")
+        ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
         ("help,h", "Print this help message");
 
     bpo::variables_map vm;

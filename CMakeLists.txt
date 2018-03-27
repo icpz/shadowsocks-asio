@@ -8,15 +8,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-missing-braces")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
-add_definitions(-DBOOST_ALL_DYN_LINK)
-
-list(APPEND BOOST_DEPS
-    boost_log-mt
+list(APPEND COMMON_DEPS
     boost_system-mt
-    boost_thread-mt
     boost_filesystem-mt
     boost_program_options-mt
+    glog
+    gflags
     )
+
+if(WINDOWS)
+    add_definitions(-DWINDOWS)
+endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 

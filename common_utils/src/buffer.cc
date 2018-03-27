@@ -1,5 +1,5 @@
 
-#include <boost/log/trivial.hpp>
+#include "common_utils/common.h"
 #include "common_utils/buffer.h"
 
 void Buffer::DeQueue(size_t len) {

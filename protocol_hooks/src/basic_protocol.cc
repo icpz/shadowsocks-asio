@@ -37,7 +37,7 @@ uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
         break;
 
     default:
-        LOG(DEBUG) << "Unsupport address type: " << hdr->atype;
+        VLOG(1) << "Unsupport address type: " << hdr->atype;
         return socks5::ATYPE_NOT_SUPPORTED_REP;
     }
     uint16_t port;

@@ -20,11 +20,11 @@ public:
     }
 
     ~Session() {
-        LOG(TRACE) << "Session completed";
+        VLOG(2) << "Session completed";
     }
 
     void Start() {
-        LOG(TRACE) << "Session start: " << client_.socket.remote_endpoint();
+        VLOG(2) << "Session start: " << client_.socket.remote_endpoint();
         auto self(shared_from_this());
         protocol_->DoInitializeProtocol(
             client_,
@@ -44,12 +44,12 @@ private:
 
     void DoResolveTarget(std::string host, std::string port) {
         auto self(shared_from_this());
-        LOG(TRACE) << "Resolving to " << host << ":" << port;
+        VLOG(2) << "Resolving to " << host << ":" << port;
         resolver_.async_resolve(
             host, port,
             [this, self](bsys::error_code ec, tcp::resolver::results_type results) {
                 if (ec) {
-                    LOG(DEBUG) << "Unable to resolve: " << ec;
+                    VLOG(1) << "Unable to resolve: " << ec;
                     client_.CancelAll();
                     return;
                 }
@@ -66,7 +66,7 @@ private:
             [this, self](bsys::error_code ec, tcp::endpoint ep) {
                 if (ec) {
                     if (ec == boost::asio::error::operation_aborted) {
-                        LOG(DEBUG) << "Connect canceled";
+                        VLOG(1) << "Connect canceled";
                         return;
                     }
                     LOG(INFO) << "Cannot connect to remote: " << ec;
@@ -74,7 +74,7 @@ private:
                     return;
                 }
                 client_.timer.cancel();
-                LOG(DEBUG) << "Connected to remote " << ep;
+                VLOG(1) << "Connected to remote " << ep;
                 DoWriteToTarget();
             }
         );
@@ -122,12 +122,12 @@ private:
              wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
                 if (ec) {
                     if (ec == boost::asio::error::misc_errors::eof) {
-                        LOG(TRACE) << "Stream terminates normally";
+                        VLOG(2) << "Stream terminates normally";
                         src.CancelAll();
                         dest.CancelAll();
                         return;
                     } else if (ec == boost::asio::error::operation_aborted) {
-                        LOG(DEBUG) << "Read operation canceled";
+                        VLOG(1) << "Read operation canceled";
                         return;
                     }
                     LOG(WARNING) << "Relay read unexcepted error: " << ec;
@@ -155,7 +155,7 @@ private:
                      wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
                         if (ec) {
                             if (ec == boost::asio::error::operation_aborted) {
-                                LOG(DEBUG) << "Write operation canceled";
+                                VLOG(1) << "Write operation canceled";
                                 return;
                             }
                             LOG(WARNING) << "Relay write unexcepted error: " << ec;
@@ -177,7 +177,7 @@ private:
     void TimerExpiredCallBack(Peer &peer, bsys::error_code ec) {
         if (ec != boost::asio::error::operation_aborted) {
             if (peer.socket.is_open()) {
-                LOG(DEBUG) << peer.socket.remote_endpoint() << " TTL expired";
+                VLOG(1) << peer.socket.remote_endpoint() << " TTL expired";
             } else {
                 LOG(WARNING) << "timer of closed socket expired!";
             }

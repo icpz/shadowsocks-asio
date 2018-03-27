@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 list(APPEND DEPS
      common_utils
      crypto_utils
-     ${BOOST_DEPS}
+     ${COMMON_DEPS}
     )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)

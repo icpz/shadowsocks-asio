@@ -49,14 +49,14 @@ std::unique_ptr<bp::child>
         return nullptr;
     }
 
-    LOG(TRACE) << "trying to search " << p.plugin;
+    VLOG(2) << "trying to search " << p.plugin;
     
     auto abs_path = bp::search_path(p.plugin);
 
     if (!abs_path.empty()) {
-        LOG(TRACE) << "found in path: " << abs_path;
+        VLOG(2) << "found in path: " << abs_path;
     } else {
-        LOG(TRACE) << "cannot find in path, maybe an absolute path ";
+        VLOG(2) << "cannot find in path, maybe an absolute path ";
         abs_path = p.plugin;
     }
 

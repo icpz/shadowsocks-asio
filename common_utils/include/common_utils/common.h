@@ -1,19 +1,14 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#ifndef LOG
-    #include <boost/log/trivial.hpp>
-    #define LOG BOOST_LOG_TRIVIAL
-    #define TRACE   trace
-    #define DEBUG   debug
-    #define INFO    info
-    #define WARNING warning
-    #define ERROR   error
-    #define FATAL   fatal
+#ifdef WINDOWS
+#define setenv(key, val, ovr) _putenv_s(key, val)
+#endif
 
-    void InitialLogLevel(int verbose);
+#include <gflags/gflags.h>
+#include <glog/logging.h>
 
-#endif // LOG
+void InitialLogLevel(const char *argv0, int verbose);
 
 #endif
 

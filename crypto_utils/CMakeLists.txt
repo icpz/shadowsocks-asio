@@ -21,7 +21,7 @@ list(APPEND DEPS
      common_utils
      ${LIBCRYPTO_LDFLAGS}
      ${LIBSODIUM_LDFLAGS}
-     ${BOOST_DEPS}
+     ${COMMON_DEPS}
     )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)

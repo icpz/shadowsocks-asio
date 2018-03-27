@@ -10,7 +10,7 @@ list(APPEND DEPS
      crypto_utils
      plugin_utils
      protocol_hooks
-     ${BOOST_DEPS}
+     ${COMMON_DEPS}
      Threads::Threads
     )
 

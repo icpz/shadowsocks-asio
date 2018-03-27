@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 list(APPEND DEPS
      common_utils
-     ${BOOST_DEPS}
+     ${COMMON_DEPS}
     )
 
 list(APPEND SOURCES

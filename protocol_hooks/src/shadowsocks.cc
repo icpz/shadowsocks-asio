@@ -44,7 +44,7 @@ void ShadowsocksServer::DoReadHeader(Peer &peer, NextStage next, size_t at_least
             peer.buf.Append(length);
             ssize_t valid_length = UnWrap(peer.buf);
             if (valid_length == 0) {
-                LOG(TRACE) << length << " bytes read, but need more";
+                VLOG(2) << length << " bytes read, but need more";
                 DoReadHeader(peer, std::move(next));
                 return;
             } else if (valid_length < 0) {
@@ -58,7 +58,7 @@ void ShadowsocksServer::DoReadHeader(Peer &peer, NextStage next, size_t at_least
             size_t need_more = socks5::Request::NeedMore(header_buf_.GetData() - 3,
                                                          header_buf_.Size() + 3);
             if (need_more) {
-                LOG(TRACE) << "need more: " << need_more;
+                VLOG(2) << "need more: " << need_more;
                 DoReadHeader(peer, std::move(next), need_more);
                 return;
             }

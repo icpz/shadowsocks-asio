@@ -2,7 +2,6 @@
 #include <utility>
 #include <memory>
 #include <algorithm>
-#include <boost/log/trivial.hpp>
 #include <boost/endian/conversion.hpp>
 
 #include <common_utils/common.h>
@@ -22,11 +21,11 @@ public:
     }
 
     ~Session() {
-        LOG(TRACE) << "Session completed";
+        VLOG(2) << "Session completed";
     }
 
     void Start() {
-        LOG(TRACE) << "Session start: " << client_.socket.remote_endpoint()
+        VLOG(2) << "Session start: " << client_.socket.remote_endpoint()
                    << ", reading method selection message";
         DoReadSocks5MethodSelectionMessage();
     }
@@ -39,7 +38,7 @@ private:
             [this, self](bsys::error_code ec, size_t len) {
                 if (ec) {
                     if (ec == boost::asio::error::misc_errors::eof) {
-                        LOG(TRACE) << "Got EOF";
+                        VLOG(2) << "Got EOF";
                         return;
                     }
                     LOG(WARNING) << "Error: " << ec; 
@@ -55,7 +54,7 @@ private:
                 size_t need_more = socks5::MethodSelectionMessageHeader::NeedMore(
                                         client_.buf.GetData(), client_.buf.Size());
                 if (need_more) {
-                    LOG(TRACE) << "need more data, current: " << client_.buf.Size()
+                    VLOG(2) << "need more data, current: " << client_.buf.Size()
                                << "excepted more: " << need_more;
                     client_.buf.PrepareCapacity(need_more);
                     DoReadSocks5MethodSelectionMessage();
@@ -68,7 +67,7 @@ private:
                         break;
                     }
                 }
-                LOG(TRACE) << "Start write reply";
+                VLOG(2) << "Start write reply";
                 DoWriteSocks5MethodSelectionReply(method_selected);
             }
         );
@@ -115,7 +114,7 @@ private:
                 size_t need_more = socks5::Request::NeedMore(client_.buf.GetData(),
                                                              client_.buf.Size());
                 if (need_more) {
-                    LOG(TRACE) << "Need more data: " << need_more;
+                    VLOG(2) << "Need more data: " << need_more;
                     client_.buf.PrepareCapacity(need_more);
                     DoReadSocks5Request(need_more);
                     return;
@@ -148,7 +147,7 @@ private:
                     DoResolveRemote(std::move(hostname), std::move(port));
                 } else {
                     tcp::endpoint ep = protocol_->GetEndpoint();
-                    LOG(TRACE) << "Connecting to " << ep;
+                    VLOG(2) << "Connecting to " << ep;
                     DoConnectRemote(std::array<tcp::endpoint, 1>{ ep });
                 }
             }
@@ -158,12 +157,12 @@ private:
 
     void DoResolveRemote(std::string host, std::string port) {
         auto self(shared_from_this());
-        LOG(TRACE) << "Resolving to " << host << ":" << port;
+        VLOG(2) << "Resolving to " << host << ":" << port;
         resolver_.async_resolve(
             host, port,
             [this, self](bsys::error_code ec, tcp::resolver::results_type results) {
                 if (ec) {
-                    LOG(DEBUG) << "Unable to resolve: " << ec;
+                    VLOG(1) << "Unable to resolve: " << ec;
                     DoWriteSocks5Reply(socks5::HOST_UNREACHABLE_REP);
                     return;
                 }
@@ -180,7 +179,7 @@ private:
             [this, self](bsys::error_code ec, tcp::endpoint ep) {
                 if (ec) {
                     if (ec == boost::asio::error::operation_aborted) {
-                        LOG(DEBUG) << "Connect canceled";
+                        VLOG(1) << "Connect canceled";
                         return;
                     }
                     LOG(INFO) << "Cannot connect to remote: " << ec;
@@ -190,7 +189,7 @@ private:
                     return;
                 }
                 client_.timer.cancel();
-                LOG(DEBUG) << "Connected to remote " << ep;
+                VLOG(1) << "Connected to remote " << ep;
                 DoWriteSocks5Reply(socks5::SUCCEEDED_REP);
             }
         );
@@ -214,7 +213,7 @@ private:
                     return;
                 }
                 if (reply == socks5::SUCCEEDED_REP) {
-                    LOG(TRACE) << "Start streaming";
+                    VLOG(2) << "Start streaming";
                     client_.timer.cancel();
                     client_.buf.Reset();
                     protocol_->DoInitializeProtocol(
@@ -248,12 +247,12 @@ private:
              wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
                 if (ec) {
                     if (ec == boost::asio::error::misc_errors::eof) {
-                        LOG(TRACE) << "Stream terminates normally";
+                        VLOG(2) << "Stream terminates normally";
                         src.CancelAll();
                         dest.CancelAll();
                         return;
                     } else if (ec == boost::asio::error::operation_aborted) {
-                        LOG(DEBUG) << "Read operation canceled";
+                        VLOG(1) << "Read operation canceled";
                         return;
                     }
                     LOG(WARNING) << "Relay read unexcepted error: " << ec;
@@ -281,7 +280,7 @@ private:
                      wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
                         if (ec) {
                             if (ec == boost::asio::error::operation_aborted) {
-                                LOG(DEBUG) << "Write operation canceled";
+                                VLOG(1) << "Write operation canceled";
                                 return;
                             }
                             LOG(WARNING) << "Relay write unexcepted error: " << ec;
@@ -303,7 +302,7 @@ private:
     void TimerExpiredCallBack(Peer &peer, bsys::error_code ec) {
         if (ec != boost::asio::error::operation_aborted) {
             if (peer.socket.is_open()) {
-                LOG(DEBUG) << peer.socket.remote_endpoint() << " TTL expired";
+                VLOG(1) << peer.socket.remote_endpoint() << " TTL expired";
             } else {
                 LOG(WARNING) << "timer of closed socket expired!";
             }
