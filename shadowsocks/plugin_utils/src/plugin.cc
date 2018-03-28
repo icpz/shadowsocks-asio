@@ -49,17 +49,8 @@ std::unique_ptr<bp::child>
         return nullptr;
     }
 
-    VLOG(2) << "trying to search " << p.plugin;
+    VLOG(2) << "starting plugin: " << p.plugin;
     
-    auto abs_path = bp::search_path(p.plugin);
-
-    if (!abs_path.empty()) {
-        VLOG(2) << "found in path: " << abs_path;
-    } else {
-        VLOG(2) << "cannot find in path, maybe an absolute path ";
-        abs_path = p.plugin;
-    }
-
     bp::environment env = boost::this_process::environment();
 
     env["SS_REMOTE_HOST"] = p.remote_address;
@@ -68,7 +59,7 @@ std::unique_ptr<bp::child>
     env["SS_LOCAL_PORT"] = std::to_string(p.local_port);
     env["SS_PLUGIN_OPTIONS"] = p.plugin_options;
 
-    auto c = std::make_unique<bp::child>(context, abs_path,
+    auto c = std::make_unique<bp::child>(context, p.plugin,
                                          bp::cmd = p.plugin,
                                          PluginHandler(std::move(OnExit)),
                                          bp::env = env);

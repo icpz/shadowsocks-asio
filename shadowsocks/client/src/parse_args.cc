@@ -109,7 +109,6 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
     }
     if (!server_need_resolve) {
         boost::asio::ip::tcp::endpoint ep(server_address, server_port);
-        VLOG(2) << "final endpoint: " << ep;
         return  [ep, g = std::move(CryptoGenerator)]() {
                     return GetProtocol<ShadowsocksClient>(ep, (*g)());
                 };
