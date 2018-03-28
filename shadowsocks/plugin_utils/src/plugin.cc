@@ -69,6 +69,7 @@ std::unique_ptr<bp::child>
     env["SS_PLUGIN_OPTIONS"] = p.plugin_options;
 
     auto c = std::make_unique<bp::child>(context, abs_path,
+                                         bp::cmd = p.plugin,
                                          PluginHandler(std::move(OnExit)),
                                          bp::env = env);
     return c;
