@@ -23,4 +23,5 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 add_subdirectory(common_utils)
 add_subdirectory(protocol_hooks)
 add_subdirectory(shadowsocks)
+add_subdirectory(simple-obfs)
 
