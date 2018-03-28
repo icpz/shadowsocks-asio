@@ -7,6 +7,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 list(APPEND SOURCES
      src/server.cc
+     src/parse_args.cc
      src/main.cc
     )
 

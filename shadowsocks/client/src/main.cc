@@ -17,9 +17,7 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    Socks5ProxyServer server(
-        ctx, bind_port, ProtocolGenerator
-    );
+    Socks5ProxyServer server(ctx, bind_port, ProtocolGenerator);
 
     std::unique_ptr<boost::process::child> plugin_process;
     std::thread([&plugin_process, &plugin, &main_ctx(ctx), &server]() {
