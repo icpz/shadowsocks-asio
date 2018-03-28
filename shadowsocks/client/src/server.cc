@@ -2,7 +2,6 @@
 #include <utility>
 #include <memory>
 #include <algorithm>
-#include <boost/endian/conversion.hpp>
 
 #include <common_utils/common.h>
 #include <common_utils/util.h>
