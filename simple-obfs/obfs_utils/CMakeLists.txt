@@ -12,10 +12,11 @@ list(APPEND DEPS
     )
 
 list(APPEND SOURCES
+     src/obfs.cc
      src/tls.cc
     )
 
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_library(${PROJECT_NAME} SHARED ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

@@ -243,7 +243,7 @@ static void RandBytes(uint8_t *buf, size_t len);
 static ssize_t ObfsAppData(Buffer &buf);
 static ssize_t DeObfsAppData(Buffer &buf, size_t idx, Frame *frame);
 
-ssize_t TlsObfsClient::ObfsRequest(Buffer &buf) {
+ssize_t TlsObfs::ObfsRequest(Buffer &buf) {
     Buffer tmp;
 
     if (!obfs_stage_) {
@@ -296,7 +296,7 @@ ssize_t TlsObfsClient::ObfsRequest(Buffer &buf) {
     return buf.Size();
 }
 
-ssize_t TlsObfsClient::DeObfsResponse(Buffer &buf) {
+ssize_t TlsObfs::DeObfsResponse(Buffer &buf) {
     if (!deobfs_stage_) {
         VLOG(2) << "initializing deobfs";
         size_t hello_len = sizeof(ServerHello);
@@ -348,6 +348,14 @@ ssize_t TlsObfsClient::DeObfsResponse(Buffer &buf) {
         return DeObfsAppData(buf, 0, &extra_);
     }
     return 0;
+}
+
+ssize_t TlsObfs::ObfsResponse(Buffer &buf) {
+    return buf.Size();
+}
+
+ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
+    return buf.Size();
 }
 
 ssize_t ObfsAppData(Buffer &buf) {
@@ -420,4 +428,6 @@ void RandBytes(uint8_t *buf, size_t len) {
     static std::uniform_int_distribution<uint16_t> u(0, 255);
     std::generate_n(buf, len, std::bind(std::ref(u), std::ref(rd)));
 }
+
+static const ObfsGeneratorRegister<TlsObfs> kReg("tls");
 

@@ -24,9 +24,12 @@ public:
         if (protocol_->NeedResolve()) {
             std::string hostname, port;
             protocol_->GetResolveArgs(hostname, port);
+            VLOG(1) << "connecting to " << hostname;
             DoResolveTarget(std::move(hostname), std::move(port));
         } else {
-            DoConnectTarget(std::array<tcp::endpoint, 1>{ protocol_->GetEndpoint() });
+            auto ep = protocol_->GetEndpoint();
+            VLOG(1) << "connecting to " << ep;
+            DoConnectTarget(std::array<tcp::endpoint, 1>{ ep });
         }
     }
 

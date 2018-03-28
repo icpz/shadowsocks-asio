@@ -11,32 +11,22 @@ struct Frame {
     uint8_t  buf[2];
 };
 
-class TlsObfsClient : public Obfuscator {
+class TlsObfs : public Obfuscator {
 public:
 
-    TlsObfsClient(std::string_view host, boost::asio::ip::tcp::endpoint ep)
-        : Obfuscator(std::move(ep)), hostname_(host) {
+    TlsObfs(std::string_view obfs_host)
+        : hostname_(obfs_host) {
     }
 
-    TlsObfsClient(std::string_view obfs_host, std::string host, uint16_t port)
-        : Obfuscator(std::move(host), port), hostname_(obfs_host) {
-    }
-
-    ~TlsObfsClient() { }
-
-    ssize_t Obfs(Buffer &buf) {
-        return ObfsRequest(buf);
-    }
-
-    ssize_t DeObfs(Buffer &buf) {
-        return DeObfsResponse(buf);
-    }
+    ~TlsObfs() { }
 
     ssize_t ObfsRequest(Buffer &buf);
     ssize_t DeObfsResponse(Buffer &buf);
 
-private:
+    ssize_t ObfsResponse(Buffer &buf);
+    ssize_t DeObfsRequest(Buffer &buf);
 
+private:
     int obfs_stage_ = 0;
     int deobfs_stage_ = 0;
     std::string_view hostname_;
