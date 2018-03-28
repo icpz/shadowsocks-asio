@@ -26,3 +26,9 @@ build/
 *.dll
 *.dylib
 
+ss-server
+ss-client
+
+obfs-server
+obfs-client
+
