@@ -4,7 +4,7 @@
 using ObfsGenerator = ObfsGeneratorFactory::ObfsGenerator;
 
 boost::optional<ObfsGenerator>
-    ObfsGeneratorFactory::GetGenerator(std::string name, std::string_view host) {
+    ObfsGeneratorFactory::GetGenerator(std::string name, boost::string_view host) {
         auto itr = generator_functions_.find(name);
         if (itr == generator_functions_.end()) {
             return boost::none;

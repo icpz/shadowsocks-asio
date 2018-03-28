@@ -3,7 +3,6 @@
 
 #include <array>
 #include <string>
-#include <boost/utility/string_view.hpp>
 #include <boost/endian/buffers.hpp>
 #include <sodium.h>
 

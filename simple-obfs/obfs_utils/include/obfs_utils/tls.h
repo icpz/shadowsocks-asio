@@ -1,7 +1,7 @@
 #ifndef __TLS_H__
 #define __TLS_H__
 
-#include <string_view>
+#include <boost/utility/string_view.hpp>
 
 #include "obfs_utils/obfs.h"
 
@@ -14,7 +14,7 @@ struct Frame {
 class TlsObfs : public Obfuscator {
 public:
 
-    TlsObfs(std::string_view obfs_host)
+    TlsObfs(boost::string_view obfs_host)
         : hostname_(obfs_host) {
     }
 
@@ -29,7 +29,7 @@ public:
 private:
     int obfs_stage_ = 0;
     int deobfs_stage_ = 0;
-    std::string_view hostname_;
+    boost::string_view hostname_;
     Frame extra_ = { 0 };
 };
 

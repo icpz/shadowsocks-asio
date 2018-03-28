@@ -373,7 +373,7 @@ ssize_t ObfsAppData(Buffer &buf) {
 }
 
 ssize_t DeObfsAppData(Buffer &buf, size_t idx, Frame *frame) {
-    int bidx = idx, bofst = idx;
+    size_t bidx = idx, bofst = idx;
     uint8_t *data = buf.GetData();
 
     VLOG(3) << "deobfs app data";

@@ -14,7 +14,15 @@ public:
         : buf_(std::max(1024UL, max_length)), curr_(0) {
     }
 
-    void DeQueue(size_t len);
+    void DeQueue(size_t len) {
+        size_t total = curr_;
+        if (len > total) {
+            LOG(FATAL) << "Buffer::Dequeue len > total";
+            len = total;
+        }
+        std::copy(Begin() + len, End(), Begin());
+        curr_ = total - len;
+    }
 
     void Append(size_t len) {
         PrepareCapacity(len);
