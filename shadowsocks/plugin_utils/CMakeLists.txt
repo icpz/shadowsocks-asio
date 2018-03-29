@@ -3,6 +3,15 @@ project(plugin_utils)
 
 set(CMAKE_CXX_STANDARD 14)
 
+if(WIN32)
+    find_library(BOOSTFS NAMES
+                 boost_filesystem
+                 boost_filesystem-vc140-mt
+                 boost_filesystem-vc140-mt-gd
+                )
+    list(APPEND DEPS ${BOOSTFS})
+endif()
+
 list(APPEND DEPS
      common_utils
      ${COMMON_DEPS}

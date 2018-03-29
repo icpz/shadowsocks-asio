@@ -4,6 +4,7 @@
 #include <array>
 #include <string>
 #include <boost/endian/buffers.hpp>
+
 #include <sodium.h>
 
 #include "crypto_utils/cipher.h"
@@ -71,7 +72,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Encrypt(Buffer &buf) {
 
     size_t processed_length = 0;
     while (processed_length < chunk_.size()) {
-        size_t plaintext_length = std::min(chunk_.size() - processed_length, 0x3fffUL);
+        size_t plaintext_length = std::min(chunk_.size() - processed_length, (size_t)0x3fff);
         boost::endian::big_uint16_buf_t length_buf{ (uint16_t)plaintext_length };
         size_t clen = plaintext_length + sizeof length_buf + tag_len * 2;
         int ret;

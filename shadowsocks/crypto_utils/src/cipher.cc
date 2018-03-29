@@ -36,7 +36,7 @@ size_t __BytesToKey(const std::string &password, uint8_t *key, size_t key_len) {
         LOG(FATAL) << "MD5 Digest not found in crypto library";
     }
 
-    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    EVP_MD_CTX *ctx = EVP_MD_CTX_create();
     uint8_t md_buf[EVP_MAX_MD_SIZE];
     int addmd;
     uint32_t i, j, mds;
@@ -58,7 +58,7 @@ size_t __BytesToKey(const std::string &password, uint8_t *key, size_t key_len) {
         }
     }
 
-    EVP_MD_CTX_free(ctx);
+    EVP_MD_CTX_destroy(ctx);
     return key_len;
 }
 
@@ -110,7 +110,7 @@ static uint8_t *HKDF_Expand(const EVP_MD *evp_md,
                             const uint8_t *info, size_t info_len,
                             uint8_t *okm, size_t okm_len)
 {
-    HMAC_CTX *hmac;
+    HMAC_CTX hmac;
     uint32_t i;
     uint8_t prev[EVP_MAX_MD_SIZE];
     size_t done_len = 0, dig_len = EVP_MD_size(evp_md);
@@ -120,25 +120,25 @@ static uint8_t *HKDF_Expand(const EVP_MD *evp_md,
         n++;
     if (n > 255 || okm == NULL)
         return NULL;
-    if ((hmac = HMAC_CTX_new()) == NULL)
-        return NULL;
-    if (!HMAC_Init_ex(hmac, prk, prk_len, evp_md, NULL))
+
+    HMAC_CTX_init(&hmac);
+    if (!HMAC_Init_ex(&hmac, prk, prk_len, evp_md, NULL))
         goto err;
 
     for (i = 1; i <= n; i++) {
         size_t copy_len;
         const uint8_t ctr = i;
         if (i > 1) {
-            if (!HMAC_Init_ex(hmac, NULL, 0, NULL, NULL))
+            if (!HMAC_Init_ex(&hmac, NULL, 0, NULL, NULL))
                 goto err;
-            if (!HMAC_Update(hmac, prev, dig_len))
+            if (!HMAC_Update(&hmac, prev, dig_len))
                 goto err;
         }
-        if (!HMAC_Update(hmac, info, info_len))
+        if (!HMAC_Update(&hmac, info, info_len))
             goto err;
-        if (!HMAC_Update(hmac, &ctr, 1))
+        if (!HMAC_Update(&hmac, &ctr, 1))
             goto err;
-        if (!HMAC_Final(hmac, prev, NULL))
+        if (!HMAC_Final(&hmac, prev, NULL))
             goto err;
         copy_len = (done_len + dig_len > okm_len) ?
                        okm_len - done_len :
@@ -146,11 +146,11 @@ static uint8_t *HKDF_Expand(const EVP_MD *evp_md,
         memcpy(okm + done_len, prev, copy_len);
         done_len += copy_len;
     }
-    HMAC_CTX_free(hmac);
+    HMAC_CTX_cleanup(&hmac);
     return okm;
 
  err:
-    HMAC_CTX_free(hmac);
+    HMAC_CTX_cleanup(&hmac);
     return NULL;
 }
 
