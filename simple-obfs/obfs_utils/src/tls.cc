@@ -15,6 +15,7 @@ using boost::endian::native_to_big;
 #define CT_HTONS(x) native_to_big<uint16_t>(x)
 #define CT_HTONL(x) native_to_big<uint32_t>(x)
 #define CT_NTOHS(x) big_to_native<uint16_t>(x)
+#define CT_NTOHL(x) bit_to_native<uint32_t>(x)
 
 __START_PACKED
 
@@ -250,9 +251,9 @@ static ssize_t ObfsAppData(Buffer &buf);
 static ssize_t DeObfsAppData(Buffer &buf, size_t idx, Frame *frame);
 
 ssize_t TlsObfs::ObfsRequest(Buffer &buf) {
-    Buffer tmp;
 
     if (!obfs_stage_) {
+        Buffer tmp(buf.Size());
 
         size_t buf_len = buf.Size();
         size_t hello_len = sizeof(ClientHello);
@@ -357,11 +358,119 @@ ssize_t TlsObfs::DeObfsResponse(Buffer &buf) {
 }
 
 ssize_t TlsObfs::ObfsResponse(Buffer &buf) {
+    if (!obfs_stage_) {
+        Buffer tmp(buf.Size());
+
+        size_t buf_len = buf.Size();
+        size_t hello_len = sizeof(ServerHello );
+        size_t change_cipher_spec_len = sizeof(ChangeCipherSpec );
+        size_t encrypted_handshake_len = sizeof(EncryptedHandshake);
+        size_t tls_len = hello_len + change_cipher_spec_len + encrypted_handshake_len + buf_len;
+
+        tmp.AppendData(buf);
+        buf.Reset(tls_len);
+
+        uint8_t *data = buf.GetData();
+
+        /* Server Hello */
+        memcpy(buf.GetData(), &tls_server_hello_template, hello_len);
+        ServerHello  *hello = (ServerHello  *)data;
+        hello->random_unix_time = CT_HTONL((uint32_t)time(nullptr));
+        RandBytes(hello->random_bytes, 28);
+        if (session_id_.back()) {
+            memcpy(hello->session_id, session_id_.data(), 32);
+        } else {
+            RandBytes(hello->session_id, 32);
+        }
+
+        /* Change Cipher Spec */
+        memcpy(data + hello_len, &tls_change_cipher_spec_template, change_cipher_spec_len);
+
+        /* Encrypted Handshake */
+        memcpy(data + hello_len + change_cipher_spec_len, &tls_encrypted_handshake_template,
+                encrypted_handshake_len);
+        memcpy(data + hello_len + change_cipher_spec_len + encrypted_handshake_len,
+                tmp.GetData(), buf_len);
+
+        EncryptedHandshake *encrypted_handshake =
+            (EncryptedHandshake *)(data + hello_len + change_cipher_spec_len);
+        encrypted_handshake->len = CT_HTONS(buf_len);
+
+        obfs_stage_ = 1;
+    } else {
+        ObfsAppData(buf);
+    }
+
     return buf.Size();
 }
 
 ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
-    return buf.Size();
+    if (!deobfs_stage_) {
+        uint8_t *data = buf.GetData();
+        ssize_t len = buf.Size();
+
+        len -= sizeof(ClientHello);
+        if (len <= 0) {
+            VLOG(2) << "deobfs need more: " << sizeof(ClientHello)
+                    << ", actually got " << buf.Size();
+            return 0; // need more
+        }
+
+        ClientHello *hello = (ClientHello *)data;
+        if (hello->content_type != tls_client_hello_template.content_type) {
+            LOG(WARNING) << "content_type not matching";
+            return -1;
+        }
+
+//        size_t hello_len = CT_NTOHS(hello->len) + 5;
+
+        memcpy(session_id_.data(), hello->session_id, 32);
+        session_id_.back() = 1;
+
+        len -= sizeof(ExtSessionTicket);
+        if (len <= 0) {
+            VLOG(2) << "deobfs need more";
+            return 0; // need more
+        }
+
+        ExtSessionTicket *ticket = (ExtSessionTicket *)(data + sizeof(ClientHello));
+        if (ticket->session_ticket_type != tls_ext_session_ticket_template.session_ticket_type) {
+            LOG(WARNING) << "ticket type mismatch";
+            return -1;
+        }
+
+        size_t ticket_len = CT_NTOHS(ticket->session_ticket_ext_len);
+        if (len < ticket_len) {
+            VLOG(2) << "deobfs need more";
+            return 0;
+        }
+
+        /*
+        memmove(data, (uint8_t *)ticket + sizeof(ExtSessionTicket), ticket_len);
+
+        if (buf.Size() > hello_len) {
+            memmove(data + ticket_len, data + hello_len, buf.Size() - hello_len);
+        }
+        buf.Reset(buf.Size() + ticket_len - hello_len);
+        */
+        buf.DeQueue((uint8_t *)ticket + sizeof(ExtSessionTicket) - data);
+
+        deobfs_stage_ = 1;
+
+        if (buf.Size() > ticket_len) {
+            return DeObfsAppData(buf, ticket_len, &extra_);
+        } else {
+            VLOG(2) << "done initialized, dobfs need more";
+            extra_.idx = buf.Size() - ticket_len;
+            if (extra_.idx == 0) {
+                return buf.Size();
+            }
+            VLOG(2) << "extra_.idx: " << extra_.idx;
+        }
+    } else {
+        return DeObfsAppData(buf, 0, &extra_);
+    }
+    return 0;
 }
 
 ssize_t ObfsAppData(Buffer &buf) {

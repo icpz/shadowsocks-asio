@@ -16,6 +16,7 @@ public:
 
     TlsObfs(boost::string_view obfs_host)
         : hostname_(obfs_host) {
+        session_id_.back() = 0;
     }
 
     ~TlsObfs() { }
@@ -29,6 +30,7 @@ public:
 private:
     int obfs_stage_ = 0;
     int deobfs_stage_ = 0;
+    std::array<uint8_t, 33> session_id_;
     boost::string_view hostname_;
     Frame extra_ = { 0 };
 };
