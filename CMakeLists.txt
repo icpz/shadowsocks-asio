@@ -12,6 +12,7 @@ if(NOT WIN32)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
     find_library(BOOSTSYS boost_system)
+    find_library(BOOSTPO  boost_program_options)
     find_library(GLOG     glog)
     find_library(GFLAGS   gflags)
 else()
@@ -20,6 +21,13 @@ else()
 
     find_path(BOOST_INC   boost/asio.hpp)
     find_library(BOOSTSYS NAMES boost_system boost_system-vc140-mt boost_system-vc140-mt-gd)
+    find_library(
+        BOOSTPO NAMES
+        boost_program_options
+        boost_program_options-vc140-mt
+        boost_program_options-vc140-mt-gd
+    )
+
     find_package(glog REQUIRED)
     find_package(gflags REQUIRED)
     set(GLOG glog::glog)

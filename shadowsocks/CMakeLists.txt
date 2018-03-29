@@ -10,7 +10,7 @@ add_subdirectory(ss_proto)
 find_package(Threads REQUIRED)
 
 list(APPEND DEPS
-     boost_program_options
+     ${BOOSTPO}
      common_utils
      crypto_utils
      plugin_utils

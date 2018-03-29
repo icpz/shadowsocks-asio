@@ -7,12 +7,6 @@ add_subdirectory(obfs_utils)
 
 find_package(Threads REQUIRED)
 
-find_library(BOOSTPO NAMES
-             boost_program_options
-             boost_program_options-vc140-mt
-             boost_program_options-vc140-mt-gd
-            )
-
 list(APPEND DEPS
      ${BOOSTPO}
      common_utils

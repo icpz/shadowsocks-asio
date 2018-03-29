@@ -3,24 +3,32 @@ project(crypto_utils)
 
 set(CMAKE_CXX_STANDARD 14)
 
-if (APPLE)
-    set(ENV{PKG_CONFIG_PATH} "/usr/local/opt/openssl@1.1/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+if(APPLE)
+    set(ENV{PKG_CONFIG_PATH} "/usr/local/opt/openssl/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
     find_package(PkgConfig REQUIRED)
 
-    pkg_search_module(LIBCRYPTO REQUIRED libcrypto>=1.1)
+    pkg_search_module(LIBCRYPTO REQUIRED libcrypto)
     pkg_search_module(LIBSODIUM REQUIRED libsodium)
 
     include_directories(${LIBCRYPTO_INCLUDE_DIRS})
     include_directories(${LIBSODIUM_INCLUDE_DIRS})
+
+    set(LIBCRYPTO ${LIBCRYPTO_LDFLAGS})
+    set(LIBSODIUM ${LIBSODIUM_LDFLAGS})
+elseif(WIN32)
+    find_path(LIBCRYPTO_INC openssl/evp.h)
+    find_path(LIBSODIUM_INC sodium.h)
+    find_library(LIBCRYPTO NAMES crypto)
+    find_library(LIBSODIUM NAMES sodium)
 else()
-    set(LIBCRYPTO_LDFLAGS "-lcrypto")
-    set(LIBSODIUM_LDFLAGS "-lsodium")
+    set(LIBCRYPTO "-lcrypto")
+    set(LIBSODIUM "-lsodium")
 endif()
 
 list(APPEND DEPS
      common_utils
-     ${LIBCRYPTO_LDFLAGS}
-     ${LIBSODIUM_LDFLAGS}
+     ${LIBCRYPTO}
+     ${LIBSODIUM}
      ${COMMON_DEPS}
     )
 
