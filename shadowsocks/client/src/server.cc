@@ -5,18 +5,18 @@
 
 #include <common_utils/common.h>
 #include <common_utils/util.h>
+#include <protocol_hooks/basic_stream_session.h>
 
 #include "server.h"
 
 using boost::asio::ip::tcp;
 namespace bsys = boost::system;
 
-class Session : public std::enable_shared_from_this<Session> {
+class Session : public std::enable_shared_from_this<Session>,
+                public BasicStreamSession {
 public:
     Session(tcp::socket socket, std::unique_ptr<BasicProtocol> protocol, size_t ttl = 5000)
-        : context_(socket.get_executor().context()),
-          client_(std::move(socket), ttl), remote_(context_, ttl),
-          resolver_(context_), protocol_(std::move(protocol)) {
+        : BasicStreamSession(std::move(socket), std::move(protocol), ttl) {
     }
 
     ~Session() {
@@ -70,7 +70,7 @@ private:
                 DoWriteSocks5MethodSelectionReply(method_selected);
             }
         );
-        TimerAgain(client_);
+        TimerAgain(self, client_);
     }
 
     void DoWriteSocks5MethodSelectionReply(uint8_t method) {
@@ -93,7 +93,7 @@ private:
                 }
             }
         );
-        TimerAgain(client_);
+        TimerAgain(self, client_);
     }
 
     void DoReadSocks5Request(size_t at_least = 4) {
@@ -151,7 +151,7 @@ private:
                 }
             }
         );
-        TimerAgain(client_);
+        TimerAgain(self, client_);
     }
 
     void DoResolveRemote(std::string host, std::string port) {
@@ -174,7 +174,7 @@ private:
     void DoConnectRemote(const EndpointSequence &results) {
         auto self(shared_from_this());
         boost::asio::async_connect(
-            remote_.socket, results,
+            target_.socket, results,
             [this, self](bsys::error_code ec, tcp::endpoint ep) {
                 if (ec) {
                     if (ec == boost::asio::error::operation_aborted) {
@@ -192,7 +192,7 @@ private:
                 DoWriteSocks5Reply(socks5::SUCCEEDED_REP);
             }
         );
-        TimerAgain(client_);
+        TimerAgain(self, client_);
     }
 
     void DoWriteSocks5Reply(uint8_t reply) {
@@ -202,7 +202,7 @@ private:
         hdr->rep = reply;
         client_.buf.Reset(
                 socks5::Reply::FillBoundAddress(client_.buf.GetData(),
-                                                remote_.socket.local_endpoint()));
+                                                target_.socket.local_endpoint()));
         boost::asio::async_write(
             client_.socket,
             client_.buf.GetConstBuffer(),
@@ -216,7 +216,7 @@ private:
                     client_.timer.cancel();
                     client_.buf.Reset();
                     protocol_->DoInitializeProtocol(
-                        remote_,
+                        target_,
                         std::bind(&Session::StartStream, self)
                     );
                 } else {
@@ -224,110 +224,21 @@ private:
                 }
             }
         );
-        TimerAgain(client_);
+        TimerAgain(self, client_);
     }
 
     void StartStream() {
-        DoRelayStream(client_, remote_,
+        auto self(shared_from_this());
+        DoRelayStream(self, client_, target_,
                       std::bind(&BasicProtocol::Wrap,
                                 std::ref(protocol_),
                                 std::placeholders::_1));
-        DoRelayStream(remote_, client_,
+        DoRelayStream(self, target_, client_,
                       std::bind(&BasicProtocol::UnWrap,
                                 std::ref(protocol_),
                                 std::placeholders::_1));
     }
 
-    void DoRelayStream(Peer &src, Peer &dest, BasicProtocol::Wrapper wrapper) {
-        auto self(shared_from_this());
-        src.socket.async_read_some(
-            src.buf.GetBuffer(),
-            [this, self, &src, &dest,
-             wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
-                if (ec) {
-                    if (ec == boost::asio::error::misc_errors::eof) {
-                        VLOG(2) << "Stream terminates normally";
-                        src.CancelAll();
-                        dest.CancelAll();
-                        return;
-                    } else if (ec == boost::asio::error::operation_aborted) {
-                        VLOG(1) << "Read operation canceled";
-                        return;
-                    }
-                    LOG(WARNING) << "Relay read unexcepted error: " << ec;
-                    src.CancelAll();
-                    dest.CancelAll();
-                    return;
-                }
-                src.timer.cancel();
-                src.buf.Append(len);
-                ssize_t valid_length = wrapper(src.buf);
-                if (valid_length == 0) { // need more
-                    DoRelayStream(src, dest, std::move(wrapper));
-                    return;
-                } else if (valid_length < 0) { // error occurs
-                    LOG(WARNING) << "Protocol hook error";
-                    src.CancelAll();
-                    dest.CancelAll();
-                    return;
-                }
-                boost::asio::async_write(dest.socket,
-                    src.buf.GetConstBuffer(),
-                    [this, self,
-                     &src, &dest,
-                     valid_length,
-                     wrapper = std::move(wrapper)](bsys::error_code ec, size_t len) {
-                        if (ec) {
-                            if (ec == boost::asio::error::operation_aborted) {
-                                VLOG(1) << "Write operation canceled";
-                                return;
-                            }
-                            LOG(WARNING) << "Relay write unexcepted error: " << ec;
-                            src.CancelAll();
-                            dest.CancelAll();
-                            return;
-                        }
-                        dest.timer.cancel();
-                        src.buf.Reset();
-                        DoRelayStream(src, dest, std::move(wrapper));
-                        TimerAgain(src);
-                    }
-                );
-                TimerAgain(dest);
-            }
-        );
-    }
-
-    void TimerExpiredCallBack(Peer &peer, bsys::error_code ec) {
-        if (ec != boost::asio::error::operation_aborted) {
-            if (peer.socket.is_open()) {
-                VLOG(1) << peer.socket.remote_endpoint() << " TTL expired";
-            } else {
-                LOG(WARNING) << "timer of closed socket expired!";
-            }
-            client_.CancelAll();
-            remote_.CancelAll();
-            client_.socket.close();
-            remote_.socket.close();
-        }
-    }
-
-    void TimerAgain(Peer &peer) {
-        auto self(shared_from_this());
-        peer.timer.expires_from_now(peer.ttl);
-        peer.timer.async_wait(
-            std::bind(&Session::TimerExpiredCallBack,
-                      self, std::ref(peer),
-                      std::placeholders::_1
-            )
-        );
-    }
-
-    boost::asio::io_context &context_;
-    Peer client_;
-    Peer remote_;
-    tcp::resolver resolver_;
-    std::unique_ptr<BasicProtocol> protocol_;
 };
 
 void Socks5ProxyServer::DoAccept() {
