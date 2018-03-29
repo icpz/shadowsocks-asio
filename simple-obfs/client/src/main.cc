@@ -9,16 +9,16 @@
 #include "parse_args.h"
 
 int main(int argc, char *argv[]) {
-    uint16_t bind_port;
     int log_level;
+    boost::asio::ip::tcp::endpoint ep;
 
-    auto ProtocolGenerator = ParseArgs(argc, argv, &bind_port, &log_level);
+    auto ProtocolGenerator = ParseArgs(argc, argv, &ep, &log_level);
 
     InitialLogLevel(argv[0], log_level);
 
     boost::asio::io_context ctx;
 
-    ForwardServer server(ctx, bind_port, ProtocolGenerator);
+    ForwardServer server(ctx, ep, ProtocolGenerator);
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 

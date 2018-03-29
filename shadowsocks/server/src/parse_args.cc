@@ -9,12 +9,14 @@
 #include "parse_args.h"
 
 namespace bpo = boost::program_options;
+using boost::asio::ip::tcp;
 
-auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plugin *p)
+auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, Plugin *p)
     -> std::function<std::unique_ptr<BasicProtocol>(void)> {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Shadowsocks Server");
     desc.add_options()
+        ("bind-address,b", bpo::value<std::string>()->default_value("::"), "Bind address")
         ("bind-port,l", bpo::value<uint16_t>()->default_value(58888),
             "Specific port that server will listen")
         ("method,m", bpo::value<std::string>(), "Cipher method")
@@ -51,7 +53,13 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
         bpo::notify(vm);
     }
     
-    *bind_port = vm["bind-port"].as<uint16_t>();
+    uint16_t bind_port = vm["bind-port"].as<uint16_t>();
+    boost::system::error_code ec;
+    auto bind_address = boost::asio::ip::make_address(vm["bind-address"].as<std::string>(), ec);
+    if (ec) {
+        std::cerr << "Invalid bind address" << std::endl;
+        exit(-1);
+    }
 
     if (!vm.count("password")) {
         std::cerr << "Please specify the password" << std::endl;
@@ -66,12 +74,13 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
         if (!plugin.empty()) {
             p->enable = true;
             p->plugin = plugin;
-            p->remote_address = "0.0.0.0";
-            p->remote_port = *bind_port;
+            p->remote_address = vm["bind-address"].as<std::string>();
+            p->remote_port = bind_port;
             p->local_address = "127.0.0.1";
             p->local_port = GetFreePort();
-            *bind_port = p->local_port;
-            if (*bind_port == 0) {
+            bind_address = boost::asio::ip::make_address(p->local_address);
+            bind_port = p->local_port;
+            if (bind_port == 0) {
                 std::cerr << "Fatal error: cannot get a freedom port" << std::endl;
                 exit(-1);
             }
@@ -80,6 +89,8 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level, Plug
             }
         }
     }
+
+    *bind_ep = tcp::endpoint(bind_address, bind_port);
 
     if (!vm.count("method")) {
         std::cerr << "Please specify a cipher method using -m option" << std::endl;

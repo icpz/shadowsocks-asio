@@ -9,12 +9,14 @@
 #include "parse_args.h"
 
 namespace bpo = boost::program_options;
+using boost::asio::ip::tcp;
 
-auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level)
+auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level)
     -> std::function<std::unique_ptr<BasicProtocol>(void)> {
     auto factory = ObfsGeneratorFactory::Instance();
     bpo::options_description desc("Simple Obfs Client");
     desc.add_options()
+        ("bind-address,b", bpo::value<std::string>()->default_value("::"), "Bind address")
         ("bind-port,l", bpo::value<uint16_t>(),
             "Specific port that server will listen")
         ("server-address,s", bpo::value<std::string>(), "Server address")
@@ -69,12 +71,19 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level)
 
     std::string server_host;
     uint16_t server_port;
+    boost::asio::ip::address bind_address;
+    uint16_t bind_port;
     if (standalone_mode) {
         char *opt_from_env;
+        if (!(opt_from_env = getenv("SS_LOCAL_HOST"))) {
+            exit(-1);
+        }
+        bind_address = boost::asio::ip::make_address(opt_from_env);
+
         if (!(opt_from_env = getenv("SS_LOCAL_PORT"))) {
             exit(-1);
         }
-        *bind_port = (uint16_t)std::stoul(opt_from_env);
+        bind_port = (uint16_t)std::stoul(opt_from_env);
 
         if (!(opt_from_env = getenv("SS_REMOTE_HOST"))) {
             exit(-1);
@@ -86,11 +95,18 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level)
         }
         server_port = (uint16_t)std::stoul(opt_from_env);
     } else {
+        boost::system::error_code ec;
+        bind_address = boost::asio::ip::make_address(vm["bind-address"].as<std::string>(), ec);
+        if (ec) {
+            std::cerr << "Invalid bind address" << std::endl;
+            exit(-1);
+        }
+
         if (!vm.count("bind-port")) {
             std::cerr << "Please specify the bind port" << std::endl;
             exit(-1);
         }
-        *bind_port = vm["bind-port"].as<uint16_t>();
+        bind_port = vm["bind-port"].as<uint16_t>();
 
         if (!vm.count("server-address")) {
             std::cerr << "Please specify the server address" << std::endl;
@@ -104,6 +120,7 @@ auto ParseArgs(int argc, char *argv[], uint16_t *bind_port, int *log_level)
         }
         server_port = vm["server-port"].as<uint16_t>();
     }
+    *bind_ep = tcp::endpoint(bind_address, bind_port);
 
     boost::system::error_code ec;
     auto server_address = boost::asio::ip::make_address(server_host, ec);

@@ -7,17 +7,17 @@
 #include "parse_args.h"
 
 int main(int argc, char *argv[]) {
-    uint16_t bind_port;
     int log_level;
     Plugin plugin;
+    boost::asio::ip::tcp::endpoint ep;
 
-    auto ProtocolGenerator = ParseArgs(argc, argv, &bind_port, &log_level, &plugin);
+    auto ProtocolGenerator = ParseArgs(argc, argv, &ep, &log_level, &plugin);
 
     InitialLogLevel(argv[0], log_level);
 
     boost::asio::io_context ctx;
 
-    ForwardServer server(ctx, bind_port, ProtocolGenerator);
+    ForwardServer server(ctx, ep, ProtocolGenerator);
 
     std::unique_ptr<boost::process::child> plugin_process;
     std::thread([&plugin_process, &plugin, &main_ctx(ctx), &server]() {

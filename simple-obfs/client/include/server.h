@@ -11,9 +11,9 @@ class ForwardServer {
     using ProtocolPtr = std::unique_ptr<BasicProtocol>;
     using ProtocolGenerator = std::function<ProtocolPtr(void)>;
 public:
-    ForwardServer(boost::asio::io_context &ctx, uint16_t port,
+    ForwardServer(boost::asio::io_context &ctx, tcp::endpoint ep,
                       ProtocolGenerator protocol_generator)
-        : acceptor_(ctx, tcp::endpoint(tcp::v4(), port)),
+        : acceptor_(ctx, std::move(ep)),
           protocol_generator_(std::move(protocol_generator)) {
         LOG(INFO) << "Server running at " << acceptor_.local_endpoint();
         running_ = true;
