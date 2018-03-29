@@ -5,6 +5,8 @@
 #include <functional>
 #include <boost/endian/arithmetic.hpp>
 
+#include <common_utils/common.h>
+
 #include "obfs_utils/tls.h"
 
 using boost::endian::big_to_native;
@@ -13,6 +15,8 @@ using boost::endian::native_to_big;
 #define CT_HTONS(x) native_to_big<uint16_t>(x)
 #define CT_HTONL(x) native_to_big<uint32_t>(x)
 #define CT_NTOHS(x) big_to_native<uint16_t>(x)
+
+__START_PACKED
 
 struct ClientHello {
     uint8_t  content_type;
@@ -33,7 +37,7 @@ struct ClientHello {
     uint8_t  comp_methods_len;
     uint8_t  comp_methods[1];
     uint16_t ext_len;
-} __attribute__((packed, aligned(1)));
+} __PACKED;
 
 struct ExtServerName {
     uint16_t ext_type;
@@ -41,12 +45,12 @@ struct ExtServerName {
     uint16_t server_name_list_len;
     uint8_t  server_name_type;
     uint16_t server_name_len;
-} __attribute__((packed, aligned(1)));
+} __PACKED;
 
 struct ExtSessionTicket {
     uint16_t session_ticket_type;
     uint16_t session_ticket_ext_len;
-} __attribute__((packed, aligned(1)));
+} __PACKED;
 
 struct ExtOthers {
     uint16_t ec_point_formats_ext_type;
@@ -69,7 +73,7 @@ struct ExtOthers {
 
     uint16_t extended_master_secret_type;
     uint16_t extended_master_secret_ext_len;
-} __attribute__((packed, aligned(1)));
+} __PACKED;
 
 struct ServerHello {
     uint8_t  content_type;
@@ -100,141 +104,143 @@ struct ServerHello {
     uint16_t ec_point_formats_ext_len;
     uint8_t  ec_point_formats_len;
     uint8_t  ec_point_formats[1];
-} __attribute__((packed, aligned(1)));
+} __PACKED;
 
 struct ChangeCipherSpec {
     uint8_t  content_type;
     uint16_t version;
     uint16_t len;
     uint8_t  msg;
-} __attribute__((packed, aligned(1)));
+} __PACKED;
 
 struct EncryptedHandshake {
     uint8_t  content_type;
     uint16_t version;
     uint16_t len;
-} __attribute__((packed, aligned(1)));
+} __PACKED;
+
+__END_PACKED
 
 static const ClientHello
 tls_client_hello_template = {
-    .content_type = 0x16,
-    .version = CT_HTONS(0x0301),
-    .len = 0,
+    __SFINIT(.content_type, 0x16),
+    __SFINIT(.version, CT_HTONS(0x0301)),
+    __SFINIT(.len, 0),
 
-    .handshake_type = 1,
-    .handshake_len_1 = 0,
-    .handshake_len_2 = 0,
-    .handshake_version = CT_HTONS(0x0303),
+    __SFINIT(.handshake_type, 1),
+    __SFINIT(.handshake_len_1, 0),
+    __SFINIT(.handshake_len_2, 0),
+    __SFINIT(.handshake_version, CT_HTONS(0x0303)),
 
-    .random_unix_time = 0,
-    .random_bytes = { 0 },
+    __SFINIT(.random_unix_time, 0),
+    __SFINIT(.random_bytes, { 0 }),
 
-    .session_id_len = 32,
-    .session_id = { 0 },
+    __SFINIT(.session_id_len, 32),
+    __SFINIT(.session_id, { 0 }),
 
-    .cipher_suites_len = CT_HTONS(56),
-    .cipher_suites = {
+    __SFINIT(.cipher_suites_len, CT_HTONS(56)),
+    __SFINIT(.cipher_suites, {
         0xc0, 0x2c, 0xc0, 0x30, 0x00, 0x9f, 0xcc, 0xa9, 0xcc, 0xa8, 0xcc, 0xaa, 0xc0, 0x2b, 0xc0, 0x2f,
         0x00, 0x9e, 0xc0, 0x24, 0xc0, 0x28, 0x00, 0x6b, 0xc0, 0x23, 0xc0, 0x27, 0x00, 0x67, 0xc0, 0x0a,
         0xc0, 0x14, 0x00, 0x39, 0xc0, 0x09, 0xc0, 0x13, 0x00, 0x33, 0x00, 0x9d, 0x00, 0x9c, 0x00, 0x3d,
         0x00, 0x3c, 0x00, 0x35, 0x00, 0x2f, 0x00, 0xff
-    },
+    }),
 
-    .comp_methods_len = 1,
-    .comp_methods = { 0 },
+    __SFINIT(.comp_methods_len, 1),
+    __SFINIT(.comp_methods, { 0 }),
 
-    .ext_len = 0,
+    __SFINIT(.ext_len, 0),
 };
 
 static const ExtServerName
 tls_ext_server_name_template = {
-    .ext_type = 0,
-    .ext_len = 0,
-    .server_name_list_len = 0,
-    .server_name_type = 0,
-    .server_name_len = 0,
+    __SFINIT(.ext_type, 0),
+    __SFINIT(.ext_len, 0),
+    __SFINIT(.server_name_list_len, 0),
+    __SFINIT(.server_name_type, 0),
+    __SFINIT(.server_name_len, 0),
 };
 
 static const ExtSessionTicket
 tls_ext_session_ticket_template = {
-    .session_ticket_type = CT_HTONS(0x0023),
-    .session_ticket_ext_len = 0,
+    __SFINIT(.session_ticket_type, CT_HTONS(0x0023)),
+    __SFINIT(.session_ticket_ext_len, 0),
 };
 
 static const ExtOthers
 tls_ext_others_template = {
-    .ec_point_formats_ext_type = CT_HTONS(0x000B),
-    .ec_point_formats_ext_len = CT_HTONS(4),
-    .ec_point_formats_len = 3,
-    .ec_point_formats = { 0x01, 0x00, 0x02 },
+    __SFINIT(.ec_point_formats_ext_type, CT_HTONS(0x000B)),
+    __SFINIT(.ec_point_formats_ext_len, CT_HTONS(4)),
+    __SFINIT(.ec_point_formats_len, 3),
+    __SFINIT(.ec_point_formats, { 0x01, 0x00, 0x02 }),
 
-    .elliptic_curves_type = CT_HTONS(0x000a),
-    .elliptic_curves_ext_len = CT_HTONS(10),
-    .elliptic_curves_len = CT_HTONS(8),
-    .elliptic_curves = { 0x00, 0x1d, 0x00, 0x17, 0x00, 0x19, 0x00, 0x18 },
+    __SFINIT(.elliptic_curves_type, CT_HTONS(0x000a)),
+    __SFINIT(.elliptic_curves_ext_len, CT_HTONS(10)),
+    __SFINIT(.elliptic_curves_len, CT_HTONS(8)),
+    __SFINIT(.elliptic_curves, { 0x00, 0x1d, 0x00, 0x17, 0x00, 0x19, 0x00, 0x18 }),
 
-    .sig_algos_type = CT_HTONS(0x000d),
-    .sig_algos_ext_len = CT_HTONS(32),
-    .sig_algos_len = CT_HTONS(30),
-    .sig_algos = {
+    __SFINIT(.sig_algos_type, CT_HTONS(0x000d)),
+    __SFINIT(.sig_algos_ext_len, CT_HTONS(32)),
+    __SFINIT(.sig_algos_len, CT_HTONS(30)),
+    __SFINIT(.sig_algos, {
         0x06, 0x01, 0x06, 0x02, 0x06, 0x03, 0x05, 0x01, 0x05, 0x02, 0x05, 0x03, 0x04, 0x01, 0x04, 0x02,
         0x04, 0x03, 0x03, 0x01, 0x03, 0x02, 0x03, 0x03, 0x02, 0x01, 0x02, 0x02, 0x02, 0x03
-    },
+    }),
 
-    .encrypt_then_mac_type = CT_HTONS(0x0016),
-    .encrypt_then_mac_ext_len = 0,
+    __SFINIT(.encrypt_then_mac_type, CT_HTONS(0x0016)),
+    __SFINIT(.encrypt_then_mac_ext_len, 0),
 
-    .extended_master_secret_type = CT_HTONS(0x0017),
-    .extended_master_secret_ext_len = 0,
+    __SFINIT(.extended_master_secret_type, CT_HTONS(0x0017)),
+    __SFINIT(.extended_master_secret_ext_len, 0),
 };
 
 static const ServerHello
 tls_server_hello_template = {
-    .content_type = 0x16,
-    .version = CT_HTONS(0x0301),
-    .len = CT_HTONS(91),
+    __SFINIT(.content_type, 0x16),
+    __SFINIT(.version, CT_HTONS(0x0301)),
+    __SFINIT(.len, CT_HTONS(91)),
 
-    .handshake_type = 2,
-    .handshake_len_1 = 0,
-    .handshake_len_2 = CT_HTONS(87),
-    .handshake_version = CT_HTONS(0x0303),
+    __SFINIT(.handshake_type, 2),
+    __SFINIT(.handshake_len_1, 0),
+    __SFINIT(.handshake_len_2, CT_HTONS(87)),
+    __SFINIT(.handshake_version, CT_HTONS(0x0303)),
 
-    .random_unix_time = 0,
-    .random_bytes = { 0 },
+    __SFINIT(.random_unix_time, 0),
+    __SFINIT(.random_bytes, { 0 }),
 
-    .session_id_len = 32,
-    .session_id = { 0 },
+    __SFINIT(.session_id_len, 32),
+    __SFINIT(.session_id, { 0 }),
 
-    .cipher_suite = CT_HTONS(0xCCA8),
-    .comp_method = 0,
-    .ext_len = 0,
+    __SFINIT(.cipher_suite, CT_HTONS(0xCCA8)),
+    __SFINIT(.comp_method, 0),
+    __SFINIT(.ext_len, 0),
 
-    .ext_renego_info_type = CT_HTONS(0xFF01),
-    .ext_renego_info_ext_len = CT_HTONS(1),
-    .ext_renego_info_len = 0,
+    __SFINIT(.ext_renego_info_type, CT_HTONS(0xFF01)),
+    __SFINIT(.ext_renego_info_ext_len, CT_HTONS(1)),
+    __SFINIT(.ext_renego_info_len, 0),
 
-    .extended_master_secret_type = CT_HTONS(0x0017),
-    .extended_master_secret_ext_len = 0,
+    __SFINIT(.extended_master_secret_type, CT_HTONS(0x0017)),
+    __SFINIT(.extended_master_secret_ext_len, 0),
 
-    .ec_point_formats_ext_type = CT_HTONS(0x000B),
-    .ec_point_formats_ext_len = CT_HTONS(2),
-    .ec_point_formats_len = 1,
-    .ec_point_formats = { 0 },
+    __SFINIT(.ec_point_formats_ext_type, CT_HTONS(0x000B)),
+    __SFINIT(.ec_point_formats_ext_len, CT_HTONS(2)),
+    __SFINIT(.ec_point_formats_len, 1),
+    __SFINIT(.ec_point_formats, { 0 }),
 };
 
 static const ChangeCipherSpec
 tls_change_cipher_spec_template = {
-    .content_type = 0x14,
-    .version = CT_HTONS(0x0303),
-    .len = CT_HTONS(1),
-    .msg = 0x01,
+    __SFINIT(.content_type, 0x14),
+    __SFINIT(.version, CT_HTONS(0x0303)),
+    __SFINIT(.len, CT_HTONS(1)),
+    __SFINIT(.msg, 0x01),
 };
 
 static const EncryptedHandshake
 tls_encrypted_handshake_template = {
-    .content_type = 0x16,
-    .version = CT_HTONS(0x0303),
-    .len = 0,
+    __SFINIT(.content_type, 0x16),
+    __SFINIT(.version, CT_HTONS(0x0303)),
+    __SFINIT(.len, 0),
 };
 
 const uint8_t tls_data_header[3] = {0x17, 0x03, 0x03};

@@ -7,8 +7,14 @@ add_subdirectory(obfs_utils)
 
 find_package(Threads REQUIRED)
 
+find_library(BOOSTPO NAMES
+             boost_program_options
+             boost_program_options-vc140-mt
+             boost_program_options-vc140-mt-gd
+            )
+
 list(APPEND DEPS
-     boost_program_options
+     ${BOOSTPO}
      common_utils
      protocol_hooks
      obfs_utils
@@ -17,4 +23,3 @@ list(APPEND DEPS
     )
 
 add_subdirectory(client)
-

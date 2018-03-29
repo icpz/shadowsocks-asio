@@ -20,5 +20,8 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
-
+if(WIN32)
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+else()
+    install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
+endif()

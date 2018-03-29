@@ -11,7 +11,7 @@
 class Buffer {
 public:
     Buffer(size_t max_length = 8192)
-        : buf_(std::max(1024UL, max_length)), curr_(0) {
+        : buf_(std::max((size_t)1024, max_length)), curr_(0) {
     }
 
     void DeQueue(size_t len) {

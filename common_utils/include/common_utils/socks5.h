@@ -4,6 +4,8 @@
 #include <boost/asio.hpp>
 #include <boost/endian/arithmetic.hpp>
 
+#include "common_utils/common.h"
+
 namespace socks5 {
 
 enum { VERSION = 0x05 };
@@ -39,18 +41,19 @@ enum AddressType {
     IPV6_ATYPE    = 0x04
 };
 
+__START_PACKED
 struct MethodSelectionMessageHeader {
     uint8_t ver;
     uint8_t num_methods;
     uint8_t methods[1];
 
     static size_t NeedMore(const uint8_t *buf, size_t curr_size);
-} __attribute__((__packed__));
+} __PACKED;
 
 struct MethodSelectionMessageReply {
     uint8_t ver;
     uint8_t method;
-} __attribute__((__packed__));
+} __PACKED;
 
 struct Request {
     uint8_t ver;
@@ -60,7 +63,7 @@ struct Request {
     uint8_t variable_field[1];
 
     static size_t NeedMore(const uint8_t *buf, size_t curr_size);
-} __attribute__((__packed__));
+} __PACKED;
 
 struct Reply {
     uint8_t ver;
@@ -70,8 +73,9 @@ struct Reply {
     uint8_t variable_field[1];
 
     static size_t FillBoundAddress(uint8_t *buf, const boost::asio::ip::tcp::endpoint &ep);
-} __attribute__((__packed__));
+} __PACKED;
 
+__END_PACKED;
 } // socks5
 
 #endif

@@ -4,17 +4,35 @@ project(socks5-proxy)
 set(CMAKE_SKIP_INSTALL_RPATH TRUE)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-missing-braces")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS 1)
+
+if(NOT WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-missing-braces")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+
+    find_library(BOOSTSYS boost_system)
+    find_library(GLOG     glog)
+    find_library(GFLAGS   gflags)
+else()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+
+    find_path(BOOST_INC   boost/asio.hpp)
+    find_library(BOOSTSYS NAMES boost_system boost_system-vc140-mt boost_system-vc140-mt-gd)
+    find_package(glog REQUIRED)
+    find_package(gflags REQUIRED)
+    set(GLOG glog::glog)
+    set(GFLAGS gflags)
+endif()
 
 list(APPEND COMMON_DEPS
-     boost_system
-     glog
-     gflags
+     ${BOOSTSYS}
+     ${GLOG}
+     ${GFLAGS}
     )
 
-if(WINDOWS)
+if(WIN32)
     add_definitions(-DWINDOWS)
 endif()
 
