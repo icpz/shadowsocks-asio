@@ -9,7 +9,7 @@ This is a simple port of shadowsocks.
 - ~~ss-server~~ (done)
 - ~~stream ciphers~~ (done)
 - friendly help message
-- cross-platform support
+- ~~cross-platform support~~ (done)
 - udp relay
 - ~~obfs plugin~~ (done)
 
