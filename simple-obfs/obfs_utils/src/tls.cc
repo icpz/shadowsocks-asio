@@ -122,8 +122,7 @@ struct EncryptedHandshake {
 
 __END_PACKED
 
-static const ClientHello
-tls_client_hello_template = {
+static const ClientHello kClientHelloTemplate = {
     __SFINIT(.content_type, 0x16),
     __SFINIT(.version, CT_HTONS(0x0301)),
     __SFINIT(.len, 0),
@@ -153,8 +152,7 @@ tls_client_hello_template = {
     __SFINIT(.ext_len, 0),
 };
 
-static const ExtServerName
-tls_ext_server_name_template = {
+static const ExtServerName kExtServerNameTemplate = {
     __SFINIT(.ext_type, 0),
     __SFINIT(.ext_len, 0),
     __SFINIT(.server_name_list_len, 0),
@@ -162,14 +160,12 @@ tls_ext_server_name_template = {
     __SFINIT(.server_name_len, 0),
 };
 
-static const ExtSessionTicket
-tls_ext_session_ticket_template = {
+static const ExtSessionTicket kExtSessionTicketTemplate = {
     __SFINIT(.session_ticket_type, CT_HTONS(0x0023)),
     __SFINIT(.session_ticket_ext_len, 0),
 };
 
-static const ExtOthers
-tls_ext_others_template = {
+static const ExtOthers kExtOthersTemplate = {
     __SFINIT(.ec_point_formats_ext_type, CT_HTONS(0x000B)),
     __SFINIT(.ec_point_formats_ext_len, CT_HTONS(4)),
     __SFINIT(.ec_point_formats_len, 3),
@@ -195,8 +191,7 @@ tls_ext_others_template = {
     __SFINIT(.extended_master_secret_ext_len, 0),
 };
 
-static const ServerHello
-tls_server_hello_template = {
+static const ServerHello kServerHelloTemplate = {
     __SFINIT(.content_type, 0x16),
     __SFINIT(.version, CT_HTONS(0x0301)),
     __SFINIT(.len, CT_HTONS(91)),
@@ -229,22 +224,20 @@ tls_server_hello_template = {
     __SFINIT(.ec_point_formats, { 0 }),
 };
 
-static const ChangeCipherSpec
-tls_change_cipher_spec_template = {
+static const ChangeCipherSpec kChangeCipherSpecTemplate = {
     __SFINIT(.content_type, 0x14),
     __SFINIT(.version, CT_HTONS(0x0303)),
     __SFINIT(.len, CT_HTONS(1)),
     __SFINIT(.msg, 0x01),
 };
 
-static const EncryptedHandshake
-tls_encrypted_handshake_template = {
+static const EncryptedHandshake kEncryptedHandshakeTemplate = {
     __SFINIT(.content_type, 0x16),
     __SFINIT(.version, CT_HTONS(0x0303)),
     __SFINIT(.len, 0),
 };
 
-const uint8_t tls_data_header[3] = {0x17, 0x03, 0x03};
+const uint8_t kDataHeader[3] = {0x17, 0x03, 0x03};
 
 static void RandBytes(uint8_t *buf, size_t len);
 static ssize_t ObfsAppData(Buffer &buf);
@@ -269,7 +262,7 @@ ssize_t TlsObfs::ObfsRequest(Buffer &buf) {
 
         /* Client Hello Header */
         ClientHello *hello = (ClientHello *)buf.GetData();
-        memcpy(hello, &tls_client_hello_template, hello_len);
+        memcpy(hello, &kClientHelloTemplate, hello_len);
         hello->len = CT_HTONS(tls_len - 5);
         hello->handshake_len_2 = CT_HTONS(tls_len - 9);
         hello->random_unix_time = CT_HTONL((uint32_t)time(NULL));
@@ -279,20 +272,20 @@ ssize_t TlsObfs::ObfsRequest(Buffer &buf) {
 
         /* Session Ticket */
         ExtSessionTicket *ticket = (ExtSessionTicket *)((uint8_t *)hello + hello_len);
-        memcpy(ticket, &tls_ext_session_ticket_template, ticket_len);
+        memcpy(ticket, &kExtSessionTicketTemplate, ticket_len);
         ticket->session_ticket_ext_len = CT_HTONS(buf_len);
         memcpy((uint8_t *)ticket + ticket_len, tmp.GetData(), buf_len);
 
         /* SNI */
         ExtServerName *server_name = (ExtServerName *)((uint8_t *)ticket + ticket_len + buf_len);
-        memcpy(server_name, &tls_ext_server_name_template, server_name_len);
+        memcpy(server_name, &kExtServerNameTemplate, server_name_len);
         server_name->ext_len = CT_HTONS(host_len + 3 + 2);
         server_name->server_name_list_len = CT_HTONS(host_len + 3);
         server_name->server_name_len = CT_HTONS(host_len);
         memcpy((uint8_t *)server_name + server_name_len, hostname_.data(), host_len);
 
         /* Other Extensions */
-        memcpy((uint8_t *)server_name + server_name_len + host_len, &tls_ext_others_template,
+        memcpy((uint8_t *)server_name + server_name_len + host_len, &kExtOthersTemplate,
                 other_ext_len);
 
         obfs_stage_ = 1;
@@ -318,7 +311,7 @@ ssize_t TlsObfs::DeObfsResponse(Buffer &buf) {
         }
 
         ServerHello *hello = (ServerHello *)data;
-        if (hello->content_type != tls_server_hello_template.content_type) {
+        if (hello->content_type != kServerHelloTemplate.content_type) {
             LOG(WARNING) << "content_type not matching";
             return -1;
         }
@@ -373,7 +366,7 @@ ssize_t TlsObfs::ObfsResponse(Buffer &buf) {
         uint8_t *data = buf.GetData();
 
         /* Server Hello */
-        memcpy(buf.GetData(), &tls_server_hello_template, hello_len);
+        memcpy(buf.GetData(), &kServerHelloTemplate, hello_len);
         ServerHello  *hello = (ServerHello  *)data;
         hello->random_unix_time = CT_HTONL((uint32_t)time(nullptr));
         RandBytes(hello->random_bytes, 28);
@@ -384,10 +377,10 @@ ssize_t TlsObfs::ObfsResponse(Buffer &buf) {
         }
 
         /* Change Cipher Spec */
-        memcpy(data + hello_len, &tls_change_cipher_spec_template, change_cipher_spec_len);
+        memcpy(data + hello_len, &kChangeCipherSpecTemplate, change_cipher_spec_len);
 
         /* Encrypted Handshake */
-        memcpy(data + hello_len + change_cipher_spec_len, &tls_encrypted_handshake_template,
+        memcpy(data + hello_len + change_cipher_spec_len, &kEncryptedHandshakeTemplate,
                 encrypted_handshake_len);
         memcpy(data + hello_len + change_cipher_spec_len + encrypted_handshake_len,
                 tmp.GetData(), buf_len);
@@ -417,7 +410,7 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
         }
 
         ClientHello *hello = (ClientHello *)data;
-        if (hello->content_type != tls_client_hello_template.content_type) {
+        if (hello->content_type != kClientHelloTemplate.content_type) {
             LOG(WARNING) << "content_type not matching";
             return -1;
         }
@@ -434,7 +427,7 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
         }
 
         ExtSessionTicket *ticket = (ExtSessionTicket *)(data + sizeof(ClientHello));
-        if (ticket->session_ticket_type != tls_ext_session_ticket_template.session_ticket_type) {
+        if (ticket->session_ticket_type != kExtSessionTicketTemplate.session_ticket_type) {
             LOG(WARNING) << "ticket type mismatch";
             return -1;
         }
@@ -476,7 +469,7 @@ ssize_t ObfsAppData(Buffer &buf) {
     buf.PrepareCapacity(5);
     std::copy_backward(buf.Begin(), buf.End(), buf.End() + 5);
     buf.Append(5);
-    std::copy_n(tls_data_header, 3, buf.Begin());
+    std::copy_n(kDataHeader, 3, buf.Begin());
 
     uint16_t len = CT_HTONS(buf_len);
     memcpy(buf.GetData() + 3, &len, sizeof len);
@@ -492,7 +485,7 @@ ssize_t DeObfsAppData(Buffer &buf, size_t idx, Frame *frame) {
     while (bidx < buf.Size()) {
         if (frame->len == 0) {
             if (frame->idx >= 0 && frame->idx < 3
-                    && data[bidx] != tls_data_header[frame->idx]) {
+                && data[bidx] != kDataHeader[frame->idx]) {
                 LOG(WARNING) << "invalid frame";
                 return -1;
             } else if (frame->idx >= 3 && frame->idx < 5) {
