@@ -57,7 +57,7 @@ private:
             return;
         }
         auto self(shared_from_this());
-        
+
         boost::asio::async_write(
             target_.socket,
             client_.buf.GetConstBuffer(),
