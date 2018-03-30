@@ -17,7 +17,7 @@ if(NOT WIN32)
     find_library(GFLAGS   gflags)
 else()
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /O2")
 
     find_path(BOOST_INC   boost/asio.hpp)
     find_library(BOOSTSYS NAMES boost_system boost_system-vc140-mt boost_system-vc140-mt-gd)
