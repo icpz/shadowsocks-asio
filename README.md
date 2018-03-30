@@ -106,6 +106,8 @@ make install
 - ~~cross-platform support~~ (done)
 - udp relay
 - ~~obfs plugin~~ (done)
+- http obfs, uri support
+- session management
 
 ## License
 
