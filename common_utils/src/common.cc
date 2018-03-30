@@ -10,6 +10,7 @@ void InitialLogLevel(const char *argv0, int verbose) {
         FLAGS_minloglevel = -verbose;
     }
     FLAGS_logtostderr = 1;
+    FLAGS_colorlogtostderr = 1;
     google::InitGoogleLogging(argv0);
 }
 

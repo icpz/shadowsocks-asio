@@ -321,7 +321,7 @@ ssize_t TlsObfs::DeObfsResponse(Buffer &buf) {
 
         len -= change_cipher_spec_len + encrypted_handshake_len;
         if (len <= 0) {
-            VLOG(2) << "dobfs need more";
+            VLOG(2) << "deobfs need more";
             return 0; // need more
         }
 
@@ -337,12 +337,10 @@ ssize_t TlsObfs::DeObfsResponse(Buffer &buf) {
         if (buf.Size() > msg_len) {
             return DeObfsAppData(buf, msg_len, &extra_);
         } else {
-            VLOG(2) << "done initialized, dobfs need more";
+            VLOG(2) << "done initialized, deobfs need more";
             extra_.idx = buf.Size() - msg_len;
-            if (extra_.idx == 0) {
-                return buf.Size();
-            }
             VLOG(2) << "extra_.idx: " << extra_.idx;
+            return buf.Size();
         }
     } else {
         return DeObfsAppData(buf, 0, &extra_);
@@ -450,12 +448,10 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
         if (buf.Size() > ticket_len) {
             return DeObfsAppData(buf, ticket_len, &extra_);
         } else {
-            VLOG(2) << "done initialized, dobfs need more";
+            VLOG(2) << "done initialized, deobfs need more";
             extra_.idx = buf.Size() - ticket_len;
-            if (extra_.idx == 0) {
-                return buf.Size();
-            }
             VLOG(2) << "extra_.idx: " << extra_.idx;
+            return buf.Size();
         }
     } else {
         return DeObfsAppData(buf, 0, &extra_);

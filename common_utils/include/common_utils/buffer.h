@@ -10,8 +10,9 @@
 
 class Buffer {
 public:
-    Buffer(size_t max_length = 8192)
-        : buf_(std::max((size_t)1024, max_length)), curr_(0) {
+    Buffer(size_t max_length = 8192, size_t max_read_length_once = 16384)
+        : buf_(std::max((size_t)1024, max_length)),
+          curr_(0), max_read_length_once_(max_read_length_once) {
     }
 
     void DeQueue(size_t len) {
@@ -85,7 +86,9 @@ public:
     }
 
     boost::asio::mutable_buffer GetBuffer() {
-        return boost::asio::buffer(End(), Capacity() - Size());
+        size_t rest_length = Capacity() - Size();
+        size_t avail_length = std::min(max_read_length_once_, rest_length);
+        return boost::asio::buffer(End(), avail_length);
     }
 
     boost::asio::const_buffer GetConstBuffer() const {
@@ -99,6 +102,7 @@ public:
 private:
     std::vector<uint8_t> buf_;
     size_t curr_;
+    size_t max_read_length_once_;
 };
 
 #endif
