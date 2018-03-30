@@ -433,7 +433,7 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
         }
 
         size_t ticket_len = CT_NTOHS(ticket->session_ticket_ext_len);
-        if (len < ticket_len) {
+        if (len < (ssize_t)ticket_len) {
             VLOG(2) << "deobfs need more";
             return 0;
         }
