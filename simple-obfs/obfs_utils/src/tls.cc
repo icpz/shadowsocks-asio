@@ -422,7 +422,7 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
             return -1;
         }
 
-//        size_t hello_len = CT_NTOHS(hello->len) + 5;
+        size_t hello_len = CT_NTOHS(hello->len) + 5;
 
         memcpy(session_id_.data(), hello->session_id, 32);
         session_id_.back() = 1;
@@ -445,15 +445,12 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
             return 0;
         }
 
-        /*
         memmove(data, (uint8_t *)ticket + sizeof(ExtSessionTicket), ticket_len);
 
         if (buf.Size() > hello_len) {
             memmove(data + ticket_len, data + hello_len, buf.Size() - hello_len);
         }
         buf.Reset(buf.Size() + ticket_len - hello_len);
-        */
-        buf.DeQueue((uint8_t *)ticket + sizeof(ExtSessionTicket) - data);
 
         deobfs_stage_ = 1;
 
