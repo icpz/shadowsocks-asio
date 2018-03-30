@@ -34,5 +34,34 @@ private:
     ObfsPointer obfs_;
 };
 
+class ObfsServer : public BasicProtocol {
+    typedef boost::asio::ip::tcp tcp;
+    using ObfsPointer = std::unique_ptr<Obfuscator>;
+public:
+
+    ObfsServer(tcp::endpoint ep, ObfsPointer obfs)
+        : obfs_(std::move(obfs)) {
+        target_.SetTarget(ep.address(), ep.port());
+    }
+
+    ObfsServer(std::string host, uint16_t port, ObfsPointer obfs)
+        : obfs_(std::move(obfs)) {
+        target_.SetTarget(host, port);
+    }
+
+    ~ObfsServer() = default;
+
+    ssize_t Wrap(Buffer &buf) {
+        return obfs_->ObfsResponse(buf);
+    }
+
+    ssize_t UnWrap(Buffer &buf) {
+        return obfs_->DeObfsRequest(buf);
+    }
+
+private:
+    ObfsPointer obfs_;
+};
+
 #endif
 
