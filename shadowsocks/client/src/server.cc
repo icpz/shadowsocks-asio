@@ -244,7 +244,7 @@ private:
 void Socks5ProxyServer::DoAccept() {
     acceptor_.async_accept([this](bsys::error_code ec, tcp::socket socket) {
         if (!ec) {
-            LOG(INFO) << "A new client accepted: " << socket.remote_endpoint();
+            VLOG(1) << "A new client accepted: " << socket.remote_endpoint();
             std::make_shared<Session>(std::move(socket), protocol_generator_())->Start();
         }
         if (running_) {
