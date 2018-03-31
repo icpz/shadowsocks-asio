@@ -15,7 +15,7 @@ struct PluginHandler : bp::extend::async_handler {
 
     template<class Executor>
     auto on_exit_handler(Executor &exec) {
-        return [on_exit_ = on_exit_, &exec](int exit_code, const std::error_code &ec) {
+        return [on_exit_ = on_exit_](int exit_code, const std::error_code &ec) {
                    if (exit_code) {
                        LOG(ERROR) << "Plugin exits with code: " << exit_code
                                     << ", error code: " << ec;

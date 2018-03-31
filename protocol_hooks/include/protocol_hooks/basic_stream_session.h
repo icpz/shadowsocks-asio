@@ -100,10 +100,8 @@ protected:
                 }
                 boost::asio::async_write(dest.socket,
                     src.buf.GetConstBuffer(),
-                    [this, self,
-                     &src, &dest,
-                     valid_length,
-                     wrapper = std::move(wrapper)](boost::system::error_code ec, size_t len) {
+                    [this, self, &src, &dest, wrapper = std::move(wrapper)]
+                    (boost::system::error_code ec, size_t len) {
                         if (ec) {
                             if (ec == boost::asio::error::operation_aborted) {
                                 VLOG(1) << "Write operation canceled";
