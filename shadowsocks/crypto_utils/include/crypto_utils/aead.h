@@ -23,6 +23,9 @@ public:
     ssize_t Encrypt(Buffer &buf);
     ssize_t Decrypt(Buffer &buf);
 
+    ssize_t EncryptOnce(Buffer &buf);
+    ssize_t DecryptOnce(Buffer &buf);
+
     static void DeriveKeyFromPassword(std::string password, std::vector<uint8_t> &key) {
         key.resize(key_len);
         Cipher::DeriveKeyFromPassword(std::move(password), key);
@@ -189,6 +192,86 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
     chunk_.erase(chunk_.begin(), chunk_.begin() + processed_length);
 
     return plaintext_length;
+}
+
+template<size_t key_len, size_t nonce_len, size_t tag_len>
+ssize_t AeadCipher<key_len, nonce_len, tag_len>::EncryptOnce(Buffer &buf) {
+    if (initialized_) {
+        LOG(FATAL) << "unexpected call for EncryptOnce";
+        return -1;
+    }
+    if (buf.Size() > (size_t)0x3fff) {
+        LOG(ERROR) << "buf too long to encrypt once: " << buf.Size();
+        return -1;
+    }
+
+    chunk_.reserve(buf.Size());
+    std::copy(buf.Begin(), buf.End(), std::back_inserter(chunk_));
+    buf.Reset();
+
+    randombytes_buf(salt_.data(), salt_.size());
+    if (!DeriveSessionKey()) {
+        LOG(WARNING) << "Key derivation error";
+        return -1;
+    }
+    buf.AppendData(salt_);
+
+    size_t clen = chunk_.size() + tag_len;
+    int ret;
+
+    buf.PrepareCapacity(clen);
+
+    ret = CipherEncrypt(
+            buf.End(), &clen,
+            chunk_.data(), chunk_.size(),
+            nullptr, 0
+    );
+    if (ret) {
+        LOG(WARNING) << "CipherEncrypt error while encrypting length: " << ret;
+        return ret;
+    }
+    buf.Append(clen);
+    chunk_.clear();
+
+    return buf.Size();
+}
+
+template<size_t key_len, size_t nonce_len, size_t tag_len>
+ssize_t AeadCipher<key_len, nonce_len, tag_len>::DecryptOnce(Buffer &buf) {
+    if (initialized_) {
+        LOG(FATAL) << "unexpected call for DecryptOnce";
+        return -1;
+    }
+
+    if (buf.Size() < salt_.size() + tag_len) {
+        LOG(ERROR) << "invalid packet length: " << buf.Size();
+        return -1;
+    }
+    std::copy_n(buf.Begin(), salt_.size(), salt_.begin());
+    if (!DeriveSessionKey()) {
+        LOG(WARNING) << "Key derivation error";
+        return -1;
+    }
+
+    chunk_.reserve(buf.Size() - salt_.size());
+    std::copy(buf.Begin() + salt_.size(), buf.End(), std::back_inserter(chunk_));
+    buf.Reset();
+
+    size_t mlen = chunk_.size();
+    int ret;
+    ret = CipherDecrypt(
+            buf.End(), &mlen,
+            chunk_.data(), chunk_.size(),
+            nullptr, 0
+    );
+    if (ret) {
+        LOG(WARNING) << "CipherDecrypt error while decrypting data: " << ret;
+        return ret;
+    }
+    buf.Append(mlen);
+    chunk_.clear();
+
+    return buf.Size();
 }
 
 template<size_t key_len, size_t nonce_len, size_t tag_len>

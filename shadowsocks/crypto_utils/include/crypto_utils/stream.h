@@ -18,6 +18,9 @@ public:
     ssize_t Encrypt(Buffer &buf);
     ssize_t Decrypt(Buffer &buf);
 
+    ssize_t EncryptOnce(Buffer &buf);
+    ssize_t DecryptOnce(Buffer &buf);
+
     static void DeriveKeyFromPassword(std::string password, std::vector<uint8_t> &key) {
         key.resize(key_len);
         Cipher::DeriveKeyFromPassword(std::move(password), key);
@@ -60,7 +63,7 @@ ssize_t StreamCipher<key_len, iv_len>::Encrypt(Buffer &buf) {
     }
     buf.Append(clen);
     chunk_.clear();
-    return clen;
+    return buf.Size();
 }
 
 template<size_t key_len, size_t iv_len>
@@ -92,6 +95,69 @@ ssize_t StreamCipher<key_len, iv_len>::Decrypt(Buffer &buf) {
     }
     buf.Append(mlen);
     chunk_.clear();
+    return mlen;
+}
+
+template<size_t key_len, size_t iv_len>
+ssize_t StreamCipher<key_len, iv_len>::EncryptOnce(Buffer &buf) {
+    if (initialized_) {
+        LOG(FATAL) << "unexpected call for EncryptOnce";
+        return -1;
+    }
+
+    chunk_.reserve(buf.Size());
+    std::copy(buf.Begin(), buf.End(), std::back_inserter(chunk_));
+    buf.Reset();
+
+    randombytes_buf(iv_.data(), iv_.size());
+    buf.AppendData(iv_);
+    if (InitializeCipher(true) < 0) {
+        LOG(WARNING) << "Stream cipher initialize error";
+        return -1;
+    }
+
+    buf.PrepareCapacity(chunk_.size());
+    size_t clen;
+    int ret = CipherUpdate(buf.End(), &clen, chunk_.data(), chunk_.size());
+    if (ret) {
+        LOG(WARNING) << "Stream cipher encrypt failed: " << ret;
+        return ret;
+    }
+    buf.Append(clen);
+    chunk_.clear();
+    return buf.Size();
+}
+
+template<size_t key_len, size_t iv_len>
+ssize_t StreamCipher<key_len, iv_len>::DecryptOnce(Buffer &buf) {
+    if (initialized_) {
+        LOG(FATAL) << "unexpected call for DecryptOnce";
+        return -1;
+    }
+
+    if (buf.Size() < iv_.size()) {
+        LOG(ERROR) << "invalid buf length: " << buf.Size();
+        return -1;
+    }
+
+    std::copy_n(buf.Begin(), iv_.size(), iv_.begin());
+    if (InitializeCipher(false) < 0) {
+        LOG(WARNING) << "Stream cipher initialize error";
+        return -1;
+    }
+    chunk_.reserve(buf.Size() - iv_.size());
+    std::copy(buf.Begin() + iv_.size(), buf.End(), std::back_inserter(chunk_));
+    buf.Reset();
+
+    size_t mlen;
+    int ret = CipherUpdate(buf.End(), &mlen, chunk_.data(), chunk_.size());
+    if (ret) {
+        LOG(WARNING) << "Stream cipher decrypt failed: " << ret;
+        return ret;
+    }
+    buf.Append(mlen);
+    chunk_.clear();
+
     return mlen;
 }
 

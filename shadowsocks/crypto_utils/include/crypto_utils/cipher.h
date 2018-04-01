@@ -18,6 +18,9 @@ public:
     virtual ssize_t Decrypt(Buffer &buf) = 0; 
     virtual ssize_t Encrypt(Buffer &buf) = 0;
 
+    virtual ssize_t DecryptOnce(Buffer &buf) = 0;
+    virtual ssize_t EncryptOnce(Buffer &buf) = 0;
+
     static void DeriveKeyFromPassword(std::string password, std::vector<uint8_t> &key);
 
 protected:
@@ -33,6 +36,9 @@ class CryptoContext {
 public:
     virtual ssize_t Decrypt(Buffer &buf) = 0;
     virtual ssize_t Encrypt(Buffer &buf) = 0;
+
+    virtual ssize_t DecryptOnce(Buffer &buf) = 0;
+    virtual ssize_t EncryptOnce(Buffer &buf) = 0;
 };
 
 template<typename CipherType>
@@ -47,6 +53,9 @@ public:
 
     ssize_t Decrypt(Buffer &buf) { return decryptor_->Decrypt(buf); }
     ssize_t Encrypt(Buffer &buf) { return encryptor_->Encrypt(buf); }
+
+    ssize_t DecryptOnce(Buffer &buf) { return decryptor_->DecryptOnce(buf); }
+    ssize_t EncryptOnce(Buffer &buf) { return encryptor_->EncryptOnce(buf); }
 
 private:
     std::unique_ptr<Cipher> decryptor_;
