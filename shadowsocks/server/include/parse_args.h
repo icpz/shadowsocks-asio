@@ -6,9 +6,12 @@
 #include <protocol_hooks/basic_protocol.h>
 #include <plugin_utils/plugin.h>
 
+#include "udprelay.h"
+
 auto ParseArgs(int argc, char *argv[],
                boost::asio::ip::tcp::endpoint *ep,
-               int *log_level, Plugin *plugin)
+               int *log_level, Plugin *plugin,
+               UdpServerParam *udp)
     -> std::function<std::unique_ptr<BasicProtocol>(void)>;
 
 #endif

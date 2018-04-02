@@ -4,42 +4,63 @@
 #include <crypto_utils/crypto.h>
 
 #include "server.h"
+#include "udprelay.h"
 #include "parse_args.h"
 
 int main(int argc, char *argv[]) {
     int log_level;
     Plugin plugin;
     boost::asio::ip::tcp::endpoint ep;
+    UdpServerParam udp_param;
 
-    auto ProtocolGenerator = ParseArgs(argc, argv, &ep, &log_level, &plugin);
+    auto ProtocolGenerator = ParseArgs(argc, argv, &ep, &log_level, &plugin, &udp_param);
 
     InitialLogLevel(argv[0], log_level);
 
     boost::asio::io_context ctx;
 
-    ForwardServer server(ctx, ep, ProtocolGenerator);
-
+    std::unique_ptr<ForwardServer> tcp_server;
+    std::unique_ptr<UdpRelayServer> udp_server;
     std::unique_ptr<boost::process::child> plugin_process;
-    std::thread([&plugin_process, &plugin, &main_ctx(ctx), &server]() {
-        boost::asio::io_context ctx;
-        plugin_process = StartPlugin(ctx, plugin, [&main_ctx, &server]() {
-            if (!server.Stopped()) {
-                LOG(ERROR) << "server will terminate due to plugin exited";
-                main_ctx.stop();
-            }
-        });
-        ctx.run();
-    }).detach();
+
+    if (udp_param.udp_only || udp_param.udp_enable) {
+        udp_server.reset(
+            new UdpRelayServer(ctx, udp_param.bind_ep,
+                               std::move(udp_param.crypto))
+        );
+    }
+
+    if (!udp_param.udp_only) {
+        tcp_server.reset(new ForwardServer(ctx, ep, ProtocolGenerator));
+
+        std::thread([&plugin_process, &plugin, &main_ctx(ctx), &tcp_server]() {
+            boost::asio::io_context ctx;
+            plugin_process = StartPlugin(ctx, plugin,
+                [&main_ctx, &tcp_server]() {
+                if (tcp_server && !tcp_server->Stopped()) {
+                    LOG(ERROR) << "tcp server will terminate due to plugin exited";
+                    main_ctx.stop();
+                }
+            });
+            ctx.run();
+        }).detach();
+    }
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 
     signals.async_wait(
-        [&server, &plugin_process](boost::system::error_code ec, int sig) {
+        [&tcp_server, &udp_server, &plugin_process]
+        (boost::system::error_code ec, int sig) {
             if (ec == boost::asio::error::operation_aborted) {
                 return;
             }
             LOG(INFO) << "Signal: " << sig << " received";
-            server.Stop();
+            if (tcp_server) {
+                tcp_server->Stop();
+            }
+            if (udp_server) {
+                udp_server->Stop();
+            }
             if (plugin_process && plugin_process->running()) {
                 plugin_process->terminate();
             }

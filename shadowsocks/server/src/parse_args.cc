@@ -7,11 +7,15 @@
 #include <ss_proto/shadowsocks.h>
 
 #include "parse_args.h"
+#include "udprelay.h"
 
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, Plugin *p)
+auto ParseArgs(int argc, char *argv[],
+               tcp::endpoint *bind_ep,
+               int *log_level, Plugin *p,
+               UdpServerParam *udp)
     -> std::function<std::unique_ptr<BasicProtocol>(void)> {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Shadowsocks Server");
@@ -22,6 +26,8 @@ auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, P
         ("method,m", bpo::value<std::string>(), "Cipher method")
         ("password,k", bpo::value<std::string>(), "Password")
         ("config-file,c", bpo::value<std::string>(), "Configuration file")
+        ("udp-relay,u", "Enable udp relay")
+        ("udp-only,U", "Udp only")
         ("plugin", bpo::value<std::string>(), "Plugin executable name")
         ("plugin-opts", bpo::value<std::string>(), "Plugin options")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
@@ -67,6 +73,24 @@ auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, P
     }
     std::string password = vm["password"].as<std::string>();
 
+    if (!vm.count("method")) {
+        std::cerr << "Please specify a cipher method using -m option" << std::endl;
+        exit(-1);
+    }
+    auto CryptoGenerator = factory->GetGenerator(vm["method"].as<std::string>(), password);
+    if (!CryptoGenerator) {
+        std::cerr << "Invalid cipher type!" << std::endl;
+        exit(-1);
+    }
+
+    udp->udp_enable = vm.count("udp-relay");
+    udp->udp_only = vm.count("udp-only");
+    if (udp->udp_enable || udp->udp_only) {
+        udp->bind_ep.address(bind_address);
+        udp->bind_ep.port(bind_port);
+        udp->crypto = (*CryptoGenerator)();
+    }
+
     *log_level = vm["verbose"].as<int>();
 
     if (vm.count("plugin")) {
@@ -91,16 +115,6 @@ auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, P
     }
 
     *bind_ep = tcp::endpoint(bind_address, bind_port);
-
-    if (!vm.count("method")) {
-        std::cerr << "Please specify a cipher method using -m option" << std::endl;
-        exit(-1);
-    }
-    auto CryptoGenerator = factory->GetGenerator(vm["method"].as<std::string>(), password);
-    if (!CryptoGenerator) {
-        std::cerr << "Invalid cipher type!" << std::endl;
-        exit(-1);
-    }
 
     return [g = std::move(CryptoGenerator)]() {
                return GetProtocol<ShadowsocksServer>((*g)());
