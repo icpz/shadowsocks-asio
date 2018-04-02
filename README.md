@@ -104,7 +104,7 @@ make install
 - ~~stream ciphers~~ (done)
 - friendly help message
 - ~~cross-platform support~~ (done)
-- udp relay
+- udp relay (current only available for ss-server)
 - ~~obfs plugin~~ (done)
 - http obfs, uri support
 - session management
