@@ -71,5 +71,7 @@ private:
     uint16_t port_;
 };
 
+size_t GetTargetFromSocks5Address(const uint8_t *buf, uint8_t *reply, TargetInfo &target);
+
 #endif
 

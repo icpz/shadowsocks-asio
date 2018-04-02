@@ -8,6 +8,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 list(APPEND SOURCES
      src/socks5.cc
      src/common.cc
+     src/util.cc
     )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
