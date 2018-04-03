@@ -104,8 +104,9 @@ void UdpRelayServer::DoSendToTarget(
         std::unique_ptr<Buffer> buf
     ) {
 
+    auto buffer = buf->GetConstBuffer(); // make sure buf is not moved before get its buffer
     peer->socket.async_send(
-        buf->GetConstBuffer(),
+        std::move(buffer),
         [this, peer, buf{ std::move(buf) }]
         (bsys::error_code ec, size_t length) {
             if (ec) {
