@@ -93,36 +93,5 @@ private:
 
 };
 
-void ForwardServer::DoAccept() {
-    acceptor_.async_accept([this](bsys::error_code ec, tcp::socket socket) {
-        if (!ec) {
-            VLOG(1) << "A new client accepted: " << socket.remote_endpoint();
-            std::shared_ptr<Session> session{
-                new Session(std::move(socket), protocol_generator_()),
-                std::bind(&ForwardServer::ReleaseSession, this, std::placeholders::_1)
-            };
-            sessions_.emplace(session.get(), session);
-            session->Start();
-        }
-        if (running_) {
-            DoAccept();
-        }
-    });
-}
-
-void ForwardServer::Stop() {
-    acceptor_.cancel();
-    running_ = false;
-    for (auto &kv : sessions_) {
-        auto p = kv.second.lock();
-        if (p) {
-            p->Close();
-        }
-    }
-}
-
-void ForwardServer::ReleaseSession(Session *ptr) {
-    sessions_.erase(ptr);
-    delete ptr;
-}
+DEFINE_STREAM_SERVER(ForwardServer, Session);
 
