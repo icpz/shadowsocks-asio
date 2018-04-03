@@ -1,9 +1,12 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
+#include <unordered_map>
 #include <boost/asio.hpp>
 
 #include <protocol_hooks/basic_protocol.h>
+
+class Session;
 
 class ForwardServer {
     typedef boost::asio::ip::tcp tcp;
@@ -19,10 +22,7 @@ public:
         DoAccept();
     }
 
-    void Stop() {
-        acceptor_.cancel();
-        running_ = false;
-    }
+    void Stop();
 
     bool Stopped() const {
         return !running_;
@@ -30,10 +30,12 @@ public:
 
 private:
     void DoAccept();
+    void ReleaseSession(Session *ptr);
 
     tcp::acceptor acceptor_;
     bool running_;
     ProtocolGenerator protocol_generator_;
+    std::unordered_map<Session *, std::weak_ptr<Session>> sessions_;
 };
 
 #endif

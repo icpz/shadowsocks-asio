@@ -29,6 +29,12 @@ public:
         DoReadSocks5MethodSelectionMessage();
     }
 
+    void Close() {
+        VLOG(1) << "Closing: " << client_.socket.remote_endpoint();
+        client_.CancelAll();
+        target_.CancelAll();
+    }
+
 private:
     void DoReadSocks5MethodSelectionMessage() {
         auto self(shared_from_this());
@@ -245,11 +251,32 @@ void Socks5ProxyServer::DoAccept() {
     acceptor_.async_accept([this](bsys::error_code ec, tcp::socket socket) {
         if (!ec) {
             VLOG(1) << "A new client accepted: " << socket.remote_endpoint();
-            std::make_shared<Session>(std::move(socket), protocol_generator_())->Start();
+            std::shared_ptr<Session> session{
+                new Session(std::move(socket), protocol_generator_()),
+                std::bind(&Socks5ProxyServer::ReleaseSession, this, std::placeholders::_1)
+            };
+            sessions_.emplace(session.get(), session);
+            session->Start();
         }
         if (running_) {
             DoAccept();
         }
     });
+}
+
+void Socks5ProxyServer::Stop() {
+    acceptor_.cancel();
+    running_ = false;
+    for (auto &kv : sessions_) {
+        auto p = kv.second.lock();
+        if (p) {
+            p->Close();
+        }
+    }
+}
+
+void Socks5ProxyServer::ReleaseSession(Session *ptr) {
+    sessions_.erase(ptr);
+    delete ptr;
 }
 
