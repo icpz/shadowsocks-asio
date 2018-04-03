@@ -30,7 +30,7 @@ void ShadowsocksClient::DoInitializeProtocol(Peer &peer, BasicProtocol::NextStag
 }
 
 void ShadowsocksServer::DoReadHeader(Peer &peer, NextStage next, size_t at_least) {
-    LOG(INFO) << "start reading protocol header";
+    VLOG(1) << "start reading protocol header";
     boost::asio::async_read(
         peer.socket,
         peer.buf.GetBuffer(),
