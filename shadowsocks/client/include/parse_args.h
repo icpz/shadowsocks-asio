@@ -4,12 +4,10 @@
 #include <functional>
 
 #include <protocol_hooks/basic_protocol.h>
+#include <protocol_hooks/basic_stream_server.h>
 #include <plugin_utils/plugin.h>
 
-auto ParseArgs(int argc, char *argv[],
-               boost::asio::ip::tcp::endpoint *ep,
-               int *log_level, Plugin *plugin)
-    -> std::function<std::unique_ptr<BasicProtocol>(void)>;
+void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, Plugin *plugin);
 
 #endif
 

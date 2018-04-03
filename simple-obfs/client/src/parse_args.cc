@@ -11,8 +11,7 @@
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level)
-    -> std::function<std::unique_ptr<BasicProtocol>(void)> {
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
     auto factory = ObfsGeneratorFactory::Instance();
     bpo::options_description desc("Simple Obfs Client");
     desc.add_options()
@@ -24,6 +23,7 @@ auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level)
         ("obfs", bpo::value<std::string>(), "Obfuscate mode")
         ("obfs-host", bpo::value<std::string>(), "Obfuscate hostname")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
+        ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
 
     bpo::variables_map vm;
@@ -120,21 +120,22 @@ auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level)
         }
         server_port = vm["server-port"].as<uint16_t>();
     }
-    *bind_ep = tcp::endpoint(bind_address, bind_port);
+    args->bind_ep = tcp::endpoint(bind_address, bind_port);
+    args->timeout = vm["timeout"].as<size_t>() * 1000;
 
     boost::system::error_code ec;
     auto server_address = boost::asio::ip::make_address(server_host, ec);
 
     if (!ec) {
         boost::asio::ip::tcp::endpoint ep(server_address, server_port);
-        return [ep, g = std::move(ObfsGenerator)]() {
-                   return GetProtocol<ObfsClient>(ep, (*g)());
-               };
+        args->generator = \
+            [ep, g = std::move(ObfsGenerator)]() {
+                return GetProtocol<ObfsClient>(ep, (*g)());
+            };
     }
-    return [s = std::move(server_host),
-            p = server_port,
-            g = std::move(ObfsGenerator)]() {
-               return GetProtocol<ObfsClient>(s, p, (*g)());
-           };
+    args->generator = \
+        [s = std::move(server_host), p = server_port, g = std::move(ObfsGenerator)]() {
+            return GetProtocol<ObfsClient>(s, p, (*g)());
+        };
 }
 

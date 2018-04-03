@@ -12,11 +12,10 @@
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-auto ParseArgs(int argc, char *argv[],
-               tcp::endpoint *bind_ep,
+void ParseArgs(int argc, char *argv[],
+               StreamServerArgs *args,
                int *log_level, Plugin *p,
-               UdpServerParam *udp)
-    -> std::function<std::unique_ptr<BasicProtocol>(void)> {
+               UdpServerParam *udp) {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Shadowsocks Server");
     desc.add_options()
@@ -31,6 +30,7 @@ auto ParseArgs(int argc, char *argv[],
         ("plugin", bpo::value<std::string>(), "Plugin executable name")
         ("plugin-opts", bpo::value<std::string>(), "Plugin options")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
+        ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
 
     bpo::variables_map vm;
@@ -114,10 +114,12 @@ auto ParseArgs(int argc, char *argv[],
         }
     }
 
-    *bind_ep = tcp::endpoint(bind_address, bind_port);
+    args->bind_ep = tcp::endpoint(bind_address, bind_port);
+    args->timeout = vm["timeout"].as<size_t>() * 1000;
 
-    return [g = std::move(CryptoGenerator)]() {
-               return GetProtocol<ShadowsocksServer>((*g)());
-           };
+    args->generator = \
+        [g = std::move(CryptoGenerator)]() {
+            return GetProtocol<ShadowsocksServer>((*g)());
+        };
 }
 

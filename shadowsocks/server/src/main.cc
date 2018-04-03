@@ -10,10 +10,10 @@
 int main(int argc, char *argv[]) {
     int log_level;
     Plugin plugin;
-    boost::asio::ip::tcp::endpoint ep;
+    StreamServerArgs args;
     UdpServerParam udp_param;
 
-    auto ProtocolGenerator = ParseArgs(argc, argv, &ep, &log_level, &plugin, &udp_param);
+    ParseArgs(argc, argv, &args, &log_level, &plugin, &udp_param);
 
     InitialLogLevel(argv[0], log_level);
 
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (!udp_param.udp_only) {
-        tcp_server.reset(new ForwardServer(ctx, ep, ProtocolGenerator));
+        tcp_server.reset(new ForwardServer(ctx, args.bind_ep, args.generator, args.timeout));
 
         std::thread([&plugin_process, &plugin, &main_ctx(ctx), &tcp_server]() {
             boost::asio::io_context ctx;

@@ -11,8 +11,7 @@
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, Plugin *p)
-    -> std::function<std::unique_ptr<BasicProtocol>(void)> {
+void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, Plugin *p) {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Socks5 Proxy Server");
     desc.add_options()
@@ -27,6 +26,7 @@ auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, P
         ("plugin", bpo::value<std::string>(), "Plugin executable name")
         ("plugin-opts", bpo::value<std::string>(), "Plugin options")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
+        ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
 
     bpo::variables_map vm;
@@ -62,7 +62,8 @@ auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, P
         std::cerr << "Invalid bind address" << std::endl;
         exit(-1);
     }
-    *bind_ep = tcp::endpoint(bind_address, bind_port);
+    args->bind_ep = tcp::endpoint(bind_address, bind_port);
+    args->timeout = vm["timeout"].as<size_t>() * 1000;
 
     if (!vm.count("server-address")) {
         std::cerr << "Please specify the server address" << std::endl;
@@ -118,14 +119,14 @@ auto ParseArgs(int argc, char *argv[], tcp::endpoint *bind_ep, int *log_level, P
     }
     if (!server_need_resolve) {
         boost::asio::ip::tcp::endpoint ep(server_address, server_port);
-        return  [ep, g = std::move(CryptoGenerator)]() {
-                    return GetProtocol<ShadowsocksClient>(ep, (*g)());
-                };
+        args->generator = \
+            [ep, g = std::move(CryptoGenerator)]() {
+                return GetProtocol<ShadowsocksClient>(ep, (*g)());
+            };
     }
-    return [s = std::move(server_host),
-            p = server_port,
-            g = std::move(CryptoGenerator)]() {
-               return GetProtocol<ShadowsocksClient>(s, p, (*g)());
-           };
+    args->generator = \
+        [s = std::move(server_host), p = server_port, g = std::move(CryptoGenerator)]() {
+            return GetProtocol<ShadowsocksClient>(s, p, (*g)());
+        };
 }
 

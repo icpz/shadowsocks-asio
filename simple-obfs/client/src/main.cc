@@ -9,15 +9,15 @@
 
 int main(int argc, char *argv[]) {
     int log_level;
-    boost::asio::ip::tcp::endpoint ep;
+    StreamServerArgs args;
 
-    auto ProtocolGenerator = ParseArgs(argc, argv, &ep, &log_level);
+    ParseArgs(argc, argv, &args, &log_level);
 
     InitialLogLevel(argv[0], log_level);
 
     boost::asio::io_context ctx;
 
-    ForwardServer server(ctx, ep, ProtocolGenerator);
+    ForwardServer server(ctx, args.bind_ep, args.generator, args.timeout);
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 

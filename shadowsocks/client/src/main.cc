@@ -9,15 +9,15 @@
 int main(int argc, char *argv[]) {
     int log_level;
     Plugin plugin;
-    boost::asio::ip::tcp::endpoint ep;
+    StreamServerArgs args;
 
-    auto ProtocolGenerator = ParseArgs(argc, argv, &ep, &log_level, &plugin);
+    ParseArgs(argc, argv, &log_level, &args, &plugin);
 
     InitialLogLevel(argv[0], log_level);
 
     boost::asio::io_context ctx;
 
-    Socks5ProxyServer server(ctx, ep, ProtocolGenerator);
+    Socks5ProxyServer server(ctx, args.bind_ep, args.generator, args.timeout);
 
     std::unique_ptr<boost::process::child> plugin_process;
     std::thread([&plugin_process, &plugin, &main_ctx(ctx), &server]() {

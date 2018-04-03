@@ -4,15 +4,15 @@
 #include <functional>
 
 #include <protocol_hooks/basic_protocol.h>
+#include <protocol_hooks/basic_stream_server.h>
 #include <plugin_utils/plugin.h>
 
 #include "udprelay.h"
 
-auto ParseArgs(int argc, char *argv[],
-               boost::asio::ip::tcp::endpoint *ep,
+void ParseArgs(int argc, char *argv[],
+               StreamServerArgs *args,
                int *log_level, Plugin *plugin,
-               UdpServerParam *udp)
-    -> std::function<std::unique_ptr<BasicProtocol>(void)>;
+               UdpServerParam *udp);
 
 #endif
 

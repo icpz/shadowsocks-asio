@@ -5,9 +5,9 @@
 #include <boost/asio.hpp>
 
 #include <protocol_hooks/basic_protocol.h>
+#include <protocol_hooks/basic_stream_server.h>
 
-auto ParseArgs(int argc, char *argv[], boost::asio::ip::tcp::endpoint *ep, int *log_level)
-        -> std::function<std::unique_ptr<BasicProtocol>(void)>;
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level);
 
 #endif
 

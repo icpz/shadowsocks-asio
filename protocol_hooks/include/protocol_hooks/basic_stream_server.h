@@ -13,8 +13,8 @@ class Server { \
     using ProtocolGenerator = std::function<ProtocolPtr(void)>; \
 public: \
     Server(boost::asio::io_context &ctx, tcp::endpoint ep, \
-                  ProtocolGenerator protocol_generator) \
-        : acceptor_(ctx, std::move(ep)), \
+           ProtocolGenerator protocol_generator, size_t ttl = 60000) \
+        : acceptor_(ctx, std::move(ep)), timeout_(ttl), \
           protocol_generator_(std::move(protocol_generator)) { \
         LOG(INFO) << "Server running at " << acceptor_.local_endpoint(); \
         running_ = true; \
@@ -33,6 +33,7 @@ private: \
  \
     tcp::acceptor acceptor_; \
     bool running_; \
+    size_t timeout_; \
     ProtocolGenerator protocol_generator_; \
     std::unordered_map<Session *, std::weak_ptr<Session>> sessions_; \
 }
@@ -43,7 +44,7 @@ void Server::DoAccept() { \
         if (!ec) { \
             VLOG(1) << "A new client accepted: " << socket.remote_endpoint(); \
             std::shared_ptr<Session> session{ \
-                new Session(std::move(socket), protocol_generator_()), \
+                new Session(std::move(socket), protocol_generator_(), timeout_), \
                 std::bind(&Server::ReleaseSession, this, std::placeholders::_1) \
             }; \
             sessions_.emplace(session.get(), session); \
@@ -70,6 +71,12 @@ void Server::ReleaseSession(Session *ptr) { \
     sessions_.erase(ptr); \
     delete ptr; \
 }
+
+struct StreamServerArgs {
+    boost::asio::ip::tcp::endpoint bind_ep;
+    std::function<std::unique_ptr<BasicProtocol>()> generator;
+    size_t timeout;
+};
 
 #endif
 
