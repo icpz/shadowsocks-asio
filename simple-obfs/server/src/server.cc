@@ -50,6 +50,12 @@ public:
         }
     }
 
+    void Close() {
+        VLOG(1) << "Closing: " << client_.socket.remote_endpoint();
+        client_.CancelAll();
+        target_.CancelAll();
+    }
+
 private:
     void StartStream() {
         auto self(shared_from_this());
@@ -65,15 +71,5 @@ private:
 
 };
 
-void ForwardServer::DoAccept() {
-    acceptor_.async_accept([this](bsys::error_code ec, tcp::socket socket) {
-        if (!ec) {
-            VLOG(1) << "A new client accepted: " << socket.remote_endpoint();
-            std::make_shared<Session>(std::move(socket), protocol_generator_())->Start();
-        }
-        if (running_) {
-            DoAccept();
-        }
-    });
-}
+DEFINE_STREAM_SERVER(ForwardServer, Session);
 
