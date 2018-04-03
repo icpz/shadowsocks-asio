@@ -29,12 +29,6 @@ public:
         DoReadSocks5MethodSelectionMessage();
     }
 
-    void Close() {
-        VLOG(1) << "Closing: " << client_.socket.remote_endpoint();
-        client_.CancelAll();
-        target_.CancelAll();
-    }
-
 private:
     void DoReadSocks5MethodSelectionMessage() {
         auto self(shared_from_this());

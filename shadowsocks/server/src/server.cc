@@ -50,12 +50,6 @@ public:
         );
     }
 
-    void Close() {
-        VLOG(1) << "Closing: " << client_.socket.remote_endpoint();
-        client_.CancelAll();
-        target_.CancelAll();
-    }
-
 private:
     void DoWriteToTarget() {
         if (!client_.buf.Size()) {

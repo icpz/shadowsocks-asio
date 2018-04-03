@@ -107,7 +107,7 @@ make install
 - udp relay (current only available for ss-server)
 - ~~obfs plugin~~ (done)
 - http obfs, uri support
-- session management
+- ~~session management~~ (done)
 
 ## License
 

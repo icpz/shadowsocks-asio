@@ -23,6 +23,12 @@ public:
 
     ~BasicStreamSession() = default;
 
+    void Close() {
+        VLOG(1) << "Closing: " << client_.socket.remote_endpoint();
+        client_.CancelAll();
+        target_.CancelAll();
+    }
+
 protected:
     using AfterConnected = std::function<void(void)>;
 
