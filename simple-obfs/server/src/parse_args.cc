@@ -132,10 +132,12 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
             [ep, g = std::move(ObfsGenerator)]() {
                 return GetProtocol<ObfsServer>(ep, (*g)());
             };
+    } else {
+        args->generator = \
+            [s = std::move(server_host), p = server_port, g = std::move(ObfsGenerator)]() {
+                return GetProtocol<ObfsServer>(s, p, (*g)());
+            };
     }
-    args->generator = \
-        [s = std::move(server_host), p = server_port, g = std::move(ObfsGenerator)]() {
-            return GetProtocol<ObfsServer>(s, p, (*g)());
-        };
+    return;
 }
 

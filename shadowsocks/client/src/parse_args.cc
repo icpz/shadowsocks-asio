@@ -123,10 +123,12 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
             [ep, g = std::move(CryptoGenerator)]() {
                 return GetProtocol<ShadowsocksClient>(ep, (*g)());
             };
+    } else {
+        args->generator = \
+            [s = std::move(server_host), p = server_port, g = std::move(CryptoGenerator)]() {
+                return GetProtocol<ShadowsocksClient>(s, p, (*g)());
+            };
     }
-    args->generator = \
-        [s = std::move(server_host), p = server_port, g = std::move(CryptoGenerator)]() {
-            return GetProtocol<ShadowsocksClient>(s, p, (*g)());
-        };
+    return;
 }
 
