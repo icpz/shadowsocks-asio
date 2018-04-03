@@ -161,7 +161,7 @@ void UdpRelayServer::DoReceiveFromTarget(std::shared_ptr<UdpPeer> peer) {
 }
 
 void UdpRelayServer::TimerAgain(std::shared_ptr<UdpPeer> peer) {
-    peer->timer.expires_from_now(boost::posix_time::seconds(5));
+    peer->timer.expires_from_now(boost::posix_time::seconds(30));
     peer->timer.async_wait(
         std::bind(
             &UdpRelayServer::TimerExpiredCallback,
