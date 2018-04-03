@@ -20,7 +20,9 @@ struct Peer {
     }
 
     void CancelAll() {
-        socket.cancel();
+        if (socket.is_open()) {
+            socket.cancel();
+        }
         timer.cancel();
     }
 

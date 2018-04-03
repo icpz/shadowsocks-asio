@@ -33,15 +33,26 @@ int main(int argc, char *argv[]) {
     if (!udp_param.udp_only) {
         tcp_server.reset(new ForwardServer(ctx, args.bind_ep, args.generator, args.timeout));
 
-        std::thread([&plugin_process, &plugin, &main_ctx(ctx), &tcp_server]() {
+        std::thread([&plugin_process, &plugin, &main_ctx(ctx), &tcp_server, &udp_server]() {
             boost::asio::io_context ctx;
             plugin_process = StartPlugin(ctx, plugin,
-                [&main_ctx, &tcp_server]() {
-                if (tcp_server && !tcp_server->Stopped()) {
-                    LOG(ERROR) << "tcp server will terminate due to plugin exited";
-                    main_ctx.stop();
+                [&main_ctx, &tcp_server, &udp_server]() {
+                    boost::asio::post(
+                        main_ctx,
+                        [&udp_server, &tcp_server, &main_ctx]() {
+                            if (tcp_server && !tcp_server->Stopped()) {
+                                LOG(ERROR) << "tcp server will terminate due to plugin exited";
+                                tcp_server->Stop();
+                            }
+                            if (udp_server && !udp_server->Stopped()) {
+                                LOG(ERROR) << "udp server will terminate due to plugin exited";
+                                udp_server->Stop();
+                            }
+                            main_ctx.stop();
+                        }
+                    );
                 }
-            });
+            );
             ctx.run();
         }).detach();
     }
@@ -55,10 +66,10 @@ int main(int argc, char *argv[]) {
                 return;
             }
             LOG(INFO) << "Signal: " << sig << " received";
-            if (tcp_server) {
+            if (tcp_server && !tcp_server->Stopped()) {
                 tcp_server->Stop();
             }
-            if (udp_server) {
+            if (udp_server && !udp_server->Stopped()) {
                 udp_server->Stop();
             }
             if (plugin_process && plugin_process->running()) {

@@ -57,6 +57,7 @@ void Server::DoAccept() { \
 } \
  \
 void Server::Stop() { \
+    if (Stopped()) { return; } \
     acceptor_.cancel(); \
     running_ = false; \
     for (auto &kv : sessions_) { \

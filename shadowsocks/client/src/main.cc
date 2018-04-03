@@ -23,10 +23,15 @@ int main(int argc, char *argv[]) {
     std::thread([&plugin_process, &plugin, &main_ctx(ctx), &server]() {
         boost::asio::io_context ctx;
         plugin_process = StartPlugin(ctx, plugin, [&main_ctx, &server]() {
-            if (!server.Stopped()) {
-                LOG(ERROR) << "server will terminate due to plugin exited";
-                main_ctx.stop();
-            }
+            boost::asio::post(
+                main_ctx,
+                [&server, &main_ctx]() {
+                    if (!server.Stopped()) {
+                        LOG(ERROR) << "server will terminate due to plugin exited";
+                        main_ctx.stop();
+                    }
+                }
+            );
         });
         ctx.run();
     }).detach();
@@ -39,7 +44,9 @@ int main(int argc, char *argv[]) {
                 return;
             }
             LOG(INFO) << "Signal: " << sig << " received";
-            server.Stop();
+            if (!server.Stopped()) {
+                server.Stop();
+            }
             if (plugin_process && plugin_process->running()) {
                 plugin_process->terminate();
             }
