@@ -63,7 +63,7 @@ private:
             client_.buf.GetConstBuffer(),
             [this, self](bsys::error_code ec, size_t len) {
                 if (ec) {
-                    LOG(WARNING) << "Unexcepted write error " << ec;
+                    LOG(WARNING) << "Unexcepted write error " << ec.message();
                     return;
                 }
                 client_.buf.Reset();

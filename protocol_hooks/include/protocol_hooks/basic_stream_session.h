@@ -40,7 +40,7 @@ protected:
             [this, self, cb = std::move(cb)]
             (boost::system::error_code ec, tcp::resolver::results_type results) {
                 if (ec) {
-                    VLOG(1) << "Unable to resolve: " << ec;
+                    VLOG(1) << "Unable to resolve: " << ec.message();
                     client_.CancelAll();
                     return;
                 }
@@ -59,7 +59,7 @@ protected:
                         VLOG(1) << "Connect canceled";
                         return;
                     }
-                    LOG(INFO) << "Cannot connect to remote: " << ec;
+                    LOG(INFO) << "Cannot connect to remote: " << ec.message();
                     client_.CancelAll();
                     return;
                 }
@@ -87,7 +87,7 @@ protected:
                         VLOG(1) << "Read operation canceled";
                         return;
                     }
-                    LOG(WARNING) << "Relay read unexcepted error: " << ec;
+                    LOG(WARNING) << "Relay read unexcepted error: " << ec.message();
                     src.CancelAll();
                     dest.CancelAll();
                     return;
@@ -113,7 +113,7 @@ protected:
                                 VLOG(1) << "Write operation canceled";
                                 return;
                             }
-                            LOG(WARNING) << "Relay write unexcepted error: " << ec;
+                            LOG(WARNING) << "Relay write unexcepted error: " << ec.message();
                             src.CancelAll();
                             dest.CancelAll();
                             return;

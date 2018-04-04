@@ -40,7 +40,7 @@ private:
                         VLOG(2) << "Got EOF";
                         return;
                     }
-                    LOG(WARNING) << "Error: " << ec; 
+                    LOG(WARNING) << "Error: " << ec.message(); 
                     return;
                 }
                 client_.timer.cancel();
@@ -83,7 +83,7 @@ private:
             client_.socket, client_.buf.GetConstBuffer(),
             [this, self, method](bsys::error_code ec, size_t len) {
                 if (ec) {
-                    LOG(WARNING) << "Unexcepted error: " << ec;
+                    LOG(WARNING) << "Unexcepted error: " << ec.message();
                     return;
                 }
                 client_.timer.cancel();
@@ -104,7 +104,7 @@ private:
             boost::asio::transfer_at_least(at_least),
             [this, self](bsys::error_code ec, size_t len) {
                 if (ec) {
-                    LOG(WARNING) << "Unexcepted error: " << ec;
+                    LOG(WARNING) << "Unexcepted error: " << ec.message();
                     client_.CancelAll();
                     return;
                 }
@@ -161,7 +161,7 @@ private:
             host, port,
             [this, self](bsys::error_code ec, tcp::resolver::results_type results) {
                 if (ec) {
-                    VLOG(1) << "Unable to resolve: " << ec;
+                    VLOG(1) << "Unable to resolve: " << ec.message();
                     DoWriteSocks5Reply(socks5::HOST_UNREACHABLE_REP);
                     return;
                 }
@@ -181,7 +181,7 @@ private:
                         VLOG(1) << "Connect canceled";
                         return;
                     }
-                    LOG(INFO) << "Cannot connect to remote: " << ec;
+                    LOG(INFO) << "Cannot connect to remote: " << ec.message();
                     DoWriteSocks5Reply((ec == boost::asio::error::connection_refused
                                         ? socks5::CONN_REFUSED_REP
                                         : socks5::NETWORK_UNREACHABLE_REP));
@@ -208,7 +208,7 @@ private:
             client_.buf.GetConstBuffer(),
             [this, self, reply](bsys::error_code ec, size_t len) {
                 if (ec) {
-                    LOG(WARNING) << "Unexcepted write error " << ec;
+                    LOG(WARNING) << "Unexcepted write error " << ec.message();
                     return;
                 }
                 if (reply == socks5::SUCCEEDED_REP) {
