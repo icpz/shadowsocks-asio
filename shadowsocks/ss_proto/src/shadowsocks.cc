@@ -21,7 +21,12 @@ void ShadowsocksClient::DoInitializeProtocol(Peer &peer, BasicProtocol::NextStag
         peer.socket, header_buf_.GetConstBuffer(),
         [next](boost::system::error_code ec, size_t length) {
             if (ec) {
-                LOG(INFO) << "unexcepted error while initializing protocol: " << ec.message();
+                if (ec == boost::asio::error::misc_errors::eof
+                    || ec == boost::asio::error::operation_aborted) {
+                    VLOG(1) << ec.message() << " while initializing protocol";
+                } else {
+                    LOG(WARNING) << "unexcepted error while initializing protocol: " << ec.message();
+                }
                 return;
             }
             next();
@@ -37,7 +42,12 @@ void ShadowsocksServer::DoReadHeader(Peer &peer, NextStage next, size_t at_least
         boost::asio::transfer_at_least(at_least),
         [this, &peer, next = std::move(next)](boost::system::error_code ec, size_t length) {
             if (ec) {
-                LOG(INFO) << "unexcepted error while initializing protocol: " << ec.message();
+                if (ec == boost::asio::error::misc_errors::eof
+                    || ec == boost::asio::error::operation_aborted) {
+                    VLOG(1) << ec.message() << " while initializing protocol";
+                } else {
+                    LOG(WARNING) << "unexcepted error while initializing protocol: " << ec.message();
+                }
                 return;
             }
 
