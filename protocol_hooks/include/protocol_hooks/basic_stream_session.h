@@ -138,8 +138,6 @@ protected:
             }
             client_.CancelAll();
             target_.CancelAll();
-            client_.socket.close();
-            target_.socket.close();
         }
     }
 
