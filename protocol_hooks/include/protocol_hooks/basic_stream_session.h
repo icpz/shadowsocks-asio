@@ -99,7 +99,11 @@ protected:
                     DoRelayStream(self, src, dest, std::move(wrapper));
                     return;
                 } else if (valid_length < 0) { // error occurs
-                    LOG(WARNING) << "Protocol hook error";
+                    boost::system::error_code ep_ec;
+                    LOG(WARNING) << "Protocol hook error, remote ep: " << src.socket.remote_endpoint(ep_ec);
+                    if (ep_ec) {
+                        LOG(INFO) << "cannot get error endpoint, " << ep_ec.message();
+                    }
                     src.CancelAll();
                     dest.CancelAll();
                     return;
