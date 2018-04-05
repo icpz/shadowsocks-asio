@@ -1,5 +1,6 @@
 
 #include <boost/process/extend.hpp>
+#include <boost/asio.hpp>
 
 #include <common_utils/common.h>
 
@@ -43,7 +44,7 @@ struct PluginHandler : bp::extend::async_handler {
 };
 
 std::unique_ptr<bp::child>
-    StartPlugin(ba::io_context &context, const Plugin &p, std::function<void(void)>&& OnExit) {
+    StartPlugin(const Plugin &p, std::function<void(void)>&& OnExit) {
 
     if (!p.Enabled()) {
         return nullptr;
@@ -59,10 +60,16 @@ std::unique_ptr<bp::child>
     env["SS_LOCAL_PORT"] = std::to_string(p.local_port);
     env["SS_PLUGIN_OPTIONS"] = p.plugin_options;
 
-    auto c = std::make_unique<bp::child>(context, p.plugin,
-                                         bp::cmd = p.plugin,
-                                         PluginHandler(std::move(OnExit)),
-                                         bp::env = env);
+    auto ctx = std::make_shared<ba::io_context>();
+
+    auto c = std::make_unique<bp::child>(
+                 p.plugin, *ctx, bp::cmd = p.plugin,
+                 PluginHandler(std::move(OnExit)),
+                 bp::env = env
+             );
+
+    std::thread([ctx]() { ctx->run(); }).detach();
+
     return c;
 }
 

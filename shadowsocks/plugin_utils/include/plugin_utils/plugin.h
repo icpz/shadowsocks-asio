@@ -4,7 +4,6 @@
 #include <memory>
 #include <functional>
 #include <boost/process.hpp>
-#include <boost/asio.hpp>
 
 struct Plugin {
 
@@ -22,9 +21,7 @@ struct Plugin {
 };
 
 std::unique_ptr<boost::process::child>
-    StartPlugin(boost::asio::io_context &context,
-                const Plugin &plugin,
-                std::function<void(void)>&& OnExit);
+    StartPlugin(const Plugin &plugin, std::function<void(void)>&& OnExit);
 
 uint16_t GetFreePort();
 

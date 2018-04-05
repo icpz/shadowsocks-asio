@@ -30,37 +30,38 @@ int main(int argc, char *argv[]) {
         );
     }
 
+    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
+
     if (!udp_param.udp_only) {
         tcp_server.reset(new ForwardServer(ctx, args.bind_ep, args.generator, args.timeout));
 
-        std::thread([&plugin_process, &plugin, &main_ctx(ctx), &tcp_server, &udp_server]() {
-            boost::asio::io_context ctx;
-            plugin_process = StartPlugin(ctx, plugin,
-                [&main_ctx, &tcp_server, &udp_server]() {
-                    boost::asio::post(
-                        main_ctx,
-                        [&udp_server, &tcp_server, &main_ctx]() {
-                            if (tcp_server && !tcp_server->Stopped()) {
-                                LOG(ERROR) << "tcp server will terminate due to plugin exited";
-                                tcp_server->Stop();
-                            }
-                            if (udp_server && !udp_server->Stopped()) {
-                                LOG(ERROR) << "udp server will terminate due to plugin exited";
-                                udp_server->Stop();
-                            }
-                            main_ctx.stop();
+        plugin_process = StartPlugin(plugin,
+            [&ctx, &tcp_server, &udp_server, &signals]() {
+                boost::asio::post(
+                    ctx,
+                    [&udp_server, &tcp_server, &signals]() {
+                        bool need_cancel_signal = false;
+                        if (tcp_server && !tcp_server->Stopped()) {
+                            LOG(ERROR) << "tcp server will terminate due to plugin exited";
+                            tcp_server->Stop();
+                            need_cancel_signal = true;
                         }
-                    );
-                }
-            );
-            ctx.run();
-        }).detach();
+                        if (udp_server && !udp_server->Stopped()) {
+                            LOG(ERROR) << "udp server will terminate due to plugin exited";
+                            udp_server->Stop();
+                            need_cancel_signal = true;
+                        }
+                        if (need_cancel_signal) {
+                            signals.cancel();
+                        }
+                    }
+                );
+            }
+        );
     }
 
-    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
-
     signals.async_wait(
-        [&tcp_server, &udp_server, &plugin_process]
+        [&tcp_server, &udp_server]
         (boost::system::error_code ec, int sig) {
             if (ec == boost::asio::error::operation_aborted) {
                 return;
@@ -71,9 +72,6 @@ int main(int argc, char *argv[]) {
             }
             if (udp_server && !udp_server->Stopped()) {
                 udp_server->Stop();
-            }
-            if (plugin_process && plugin_process->running()) {
-                plugin_process->terminate();
             }
         }
     );

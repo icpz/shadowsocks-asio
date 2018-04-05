@@ -17,38 +17,40 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    Socks5ProxyServer server(ctx, args.bind_ep, args.generator, args.timeout);
+    std::shared_ptr<Socks5ProxyServer> tcp_server;
 
-    std::unique_ptr<boost::process::child> plugin_process;
-    std::thread([&plugin_process, &plugin, &main_ctx(ctx), &server]() {
-        boost::asio::io_context ctx;
-        plugin_process = StartPlugin(ctx, plugin, [&main_ctx, &server]() {
-            boost::asio::post(
-                main_ctx,
-                [&server, &main_ctx]() {
-                    if (!server.Stopped()) {
-                        LOG(ERROR) << "server will terminate due to plugin exited";
-                        main_ctx.stop();
-                    }
-                }
-            );
-        });
-        ctx.run();
-    }).detach();
+    tcp_server.reset(new Socks5ProxyServer(ctx, args.bind_ep, args.generator, args.timeout));
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 
+    std::unique_ptr<boost::process::child> plugin_process;
+    plugin_process = StartPlugin(plugin,
+        [&ctx, &tcp_server, &signals]() {
+            boost::asio::post(
+                ctx,
+                [&tcp_server, &signals]() {
+                    bool need_cancel_signal = false;
+                    if (tcp_server && !tcp_server->Stopped()) {
+                        LOG(ERROR) << "server will terminate due to plugin exited";
+                        tcp_server->Stop();
+                        need_cancel_signal = true;
+                    }
+                    if (need_cancel_signal) {
+                        signals.cancel();
+                    }
+                }
+            );
+        }
+    );
+
     signals.async_wait(
-        [&server, &plugin_process](boost::system::error_code ec, int sig) {
+        [&tcp_server](boost::system::error_code ec, int sig) {
             if (ec == boost::asio::error::operation_aborted) {
                 return;
             }
             LOG(INFO) << "Signal: " << sig << " received";
-            if (!server.Stopped()) {
-                server.Stop();
-            }
-            if (plugin_process && plugin_process->running()) {
-                plugin_process->terminate();
+            if (tcp_server && !tcp_server->Stopped()) {
+                tcp_server->Stop();
             }
         }
     );
