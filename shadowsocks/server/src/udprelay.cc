@@ -44,7 +44,9 @@ void UdpRelayServer::ProcessRelay(udp::endpoint ep, size_t length) {
         || (peer = itr->second.lock()) == nullptr) {
         peer.reset(
             new UdpPeer(socket_.get_executor().context()),
-            std::bind(&UdpRelayServer::ReleaseTarget, this, ep, std::placeholders::_1)
+            std::bind(&UdpRelayServer::ReleaseTarget,
+                      shared_from_this(),
+                      ep, std::placeholders::_1)
         );
         peer->header.reserve(head_length);
         std::copy_n(write_buf->Begin(), head_length, std::back_inserter(peer->header));
@@ -183,11 +185,15 @@ void UdpRelayServer::TimerExpiredCallback(
     }
 }
 
-void UdpRelayServer::ReleaseTarget(udp::endpoint ep, UdpPeer *ptr) {
-    auto itr = targets_.find(ep);
-    if (itr != targets_.end()) {
-        if (itr->second.expired()) {
-            targets_.erase(itr);
+void UdpRelayServer::ReleaseTarget(std::weak_ptr<UdpRelayServer> server,
+                                   udp::endpoint ep, UdpPeer *ptr) {
+    auto self = server.lock();
+    if (self) {
+        auto itr = self->targets_.find(ep);
+        if (itr != self->targets_.end()) {
+            if (itr->second.expired()) {
+                self->targets_.erase(itr);
+            }
         }
     }
     delete ptr;

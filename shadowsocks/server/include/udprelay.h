@@ -31,7 +31,7 @@ struct UdpServerParam {
     bool udp_enable = false;
 };
 
-class UdpRelayServer {
+class UdpRelayServer : public std::enable_shared_from_this<UdpRelayServer> {
     typedef boost::asio::ip::udp udp;
 
     struct UdpPeer {
@@ -84,7 +84,7 @@ private:
     void TimerExpiredCallback(std::shared_ptr<UdpPeer> peer, boost::system::error_code ec);
     void TimerAgain(std::shared_ptr<UdpPeer> peer);
 
-    void ReleaseTarget(udp::endpoint ep, UdpPeer *ptr);
+    static void ReleaseTarget(std::weak_ptr<UdpRelayServer>, udp::endpoint, UdpPeer *);
 
     bool running_;
     std::array<uint8_t, 8192> buf_;
