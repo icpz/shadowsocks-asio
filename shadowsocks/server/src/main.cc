@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    std::unique_ptr<ForwardServer> tcp_server;
-    std::unique_ptr<UdpRelayServer> udp_server;
+    std::shared_ptr<ForwardServer> tcp_server;
+    std::shared_ptr<UdpRelayServer> udp_server;
     std::unique_ptr<boost::process::child> plugin_process;
 
     if (udp_param.udp_only || udp_param.udp_enable) {

@@ -1,13 +1,14 @@
 #ifndef __BASIC_STREAM_SERVER__
 #define __BASIC_STREAM_SERVER__
 
+#include <utility>
 #include <unordered_map>
 #include <boost/asio.hpp>
 
 #include "protocol_hooks/basic_protocol.h"
 
 #define DECLARE_STREAM_SERVER(__server_name, __session_name) \
-class __server_name { \
+class __server_name : public std::enable_shared_from_this<__server_name> { \
     typedef boost::asio::ip::tcp tcp; \
     using ProtocolPtr = std::unique_ptr<BasicProtocol>; \
     using ProtocolGenerator = std::function<ProtocolPtr(void)>; \
@@ -36,7 +37,7 @@ public: \
  \
 private: \
     void DoAccept(); \
-    void ReleaseSession(__session_name *ptr); \
+    static void ReleaseSession(std::weak_ptr<__server_name> server, __session_name *ptr); \
  \
     tcp::acceptor acceptor_; \
     bool running_; \
@@ -52,7 +53,9 @@ void __server_name::DoAccept() { \
             VLOG(1) << "A new client accepted: " << socket.remote_endpoint(); \
             std::shared_ptr<__session_name> session{ \
                 new __session_name(std::move(socket), protocol_generator_(), timeout_), \
-                std::bind(&__server_name::ReleaseSession, this, std::placeholders::_1) \
+                std::bind(&__server_name::ReleaseSession, \
+                          shared_from_this(), \
+                          std::placeholders::_1) \
             }; \
             sessions_.emplace(session.get(), session); \
             session->Start(); \
@@ -75,8 +78,11 @@ void __server_name::Stop() { \
     } \
 } \
  \
-void __server_name::ReleaseSession(__session_name *ptr) { \
-    sessions_.erase(ptr); \
+void __server_name::ReleaseSession(std::weak_ptr<__server_name> server, __session_name *ptr) { \
+    auto self = server.lock(); \
+    if (self) { \
+        self->sessions_.erase(ptr); \
+    } \
     delete ptr; \
 }
 

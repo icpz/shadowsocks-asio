@@ -17,7 +17,10 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    ForwardServer server(ctx, args.bind_ep, args.generator, args.timeout);
+    auto server = \
+        std::make_shared<ForwardServer>(
+            ctx, args.bind_ep, args.generator, args.timeout
+        );
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 
@@ -27,7 +30,9 @@ int main(int argc, char *argv[]) {
                 return;
             }
             LOG(INFO) << "Signal: " << sig << " received";
-            server.Stop();
+            if (server && !server->Stopped()) {
+                server->Stop();
+            }
         }
     );
 
