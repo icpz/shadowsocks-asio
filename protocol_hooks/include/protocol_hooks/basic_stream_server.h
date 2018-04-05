@@ -16,7 +16,7 @@ public: \
            ProtocolGenerator protocol_generator, size_t ttl = 60000) \
         : acceptor_(ctx, std::move(ep)), timeout_(ttl), \
           protocol_generator_(std::move(protocol_generator)) { \
-        LOG(INFO) << "__server_name running at " << acceptor_.local_endpoint(); \
+        LOG(INFO) << #__server_name " running at " << acceptor_.local_endpoint(); \
         running_ = true; \
         DoAccept(); \
     } \
