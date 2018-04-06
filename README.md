@@ -8,7 +8,7 @@ This is a simple port of shadowsocks.
 
 - [windows](#windows)
 
-- [linux](#linux)
+- [debian](#debian)
 
 - [macos](#macos)
 
@@ -40,7 +40,7 @@ Following command will install binaries and dlls into %HOMEPATH%\Documents\bin
 cmake --build . --target INSTALL --config Release
 ```
 
-### Linux
+### Debian
 
 ##### Prepare
 
