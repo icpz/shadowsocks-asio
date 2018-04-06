@@ -196,6 +196,7 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::Decrypt(Buffer &buf) {
 
 template<size_t key_len, size_t nonce_len, size_t tag_len>
 ssize_t AeadCipher<key_len, nonce_len, tag_len>::EncryptOnce(Buffer &buf) {
+    chunk_.clear();
     if (initialized_) {
         LOG(FATAL) << "unexpected call for EncryptOnce";
         return -1;
@@ -231,13 +232,13 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::EncryptOnce(Buffer &buf) {
         return ret;
     }
     buf.Append(clen);
-    chunk_.clear();
 
     return buf.Size();
 }
 
 template<size_t key_len, size_t nonce_len, size_t tag_len>
 ssize_t AeadCipher<key_len, nonce_len, tag_len>::DecryptOnce(Buffer &buf) {
+    chunk_.clear();
     if (initialized_) {
         LOG(FATAL) << "unexpected call for DecryptOnce";
         return -1;
@@ -269,7 +270,6 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::DecryptOnce(Buffer &buf) {
         return ret;
     }
     buf.Append(mlen);
-    chunk_.clear();
 
     return buf.Size();
 }

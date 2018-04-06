@@ -100,6 +100,7 @@ ssize_t StreamCipher<key_len, iv_len>::Decrypt(Buffer &buf) {
 
 template<size_t key_len, size_t iv_len>
 ssize_t StreamCipher<key_len, iv_len>::EncryptOnce(Buffer &buf) {
+    chunk_.clear();
     if (initialized_) {
         LOG(FATAL) << "unexpected call for EncryptOnce";
         return -1;
@@ -124,12 +125,12 @@ ssize_t StreamCipher<key_len, iv_len>::EncryptOnce(Buffer &buf) {
         return ret;
     }
     buf.Append(clen);
-    chunk_.clear();
     return buf.Size();
 }
 
 template<size_t key_len, size_t iv_len>
 ssize_t StreamCipher<key_len, iv_len>::DecryptOnce(Buffer &buf) {
+    chunk_.clear();
     if (initialized_) {
         LOG(FATAL) << "unexpected call for DecryptOnce";
         return -1;
@@ -156,7 +157,6 @@ ssize_t StreamCipher<key_len, iv_len>::DecryptOnce(Buffer &buf) {
         return ret;
     }
     buf.Append(mlen);
-    chunk_.clear();
 
     return mlen;
 }
