@@ -19,6 +19,7 @@ size_t GetTargetFromSocks5Address(const uint8_t *buf, uint8_t *reply, TargetInfo
     case socks5::DOMAIN_ATYPE:
         need_resolve = true;
         port_offset = hdr->variable_field[0];
+        address_str.reserve(port_offset);
         std::copy_n(&hdr->variable_field[1], port_offset,
                     std::back_inserter(address_str));
         port_offset += 1;
