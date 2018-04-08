@@ -25,7 +25,11 @@ int main(int argc, char *argv[]) {
 
     tcp_server.reset(new Socks5ProxyServer(ctx, args.bind_ep, args.generator, args.timeout));
 
-    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM, SIGINFO);
+    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
+
+#ifndef WINDOWS
+    signals.add(SIGINFO);
+#endif
 
     std::unique_ptr<boost::process::child> plugin_process;
     plugin_process = StartPlugin(plugin,
@@ -73,6 +77,8 @@ void SignalHandler(boost::asio::signal_set &signals,
         return;
     }
     LOG(INFO) << "Signal: " << sig << " received";
+
+#ifndef WINDOWS
     if (sig == SIGINFO) {
         boost::asio::post(
             signals.get_executor().context(),
@@ -89,6 +95,8 @@ void SignalHandler(boost::asio::signal_set &signals,
             )
         );
     }
+#endif
+
     if (tcp && !tcp->Stopped()) {
         tcp->Stop();
     }

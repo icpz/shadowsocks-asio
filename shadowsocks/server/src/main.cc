@@ -35,7 +35,11 @@ int main(int argc, char *argv[]) {
         );
     }
 
-    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM, SIGINFO);
+    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
+
+#ifndef WINDOWS
+    signals.add(SIGINFO);
+#endif
 
     if (!udp_param.udp_only) {
         tcp_server.reset(new ForwardServer(ctx, args.bind_ep, args.generator, args.timeout));
@@ -92,6 +96,8 @@ void SignalHandler(boost::asio::signal_set &signals,
         return;
     }
     LOG(INFO) << "Signal: " << sig << " received";
+
+#ifndef WINDOWS
     if (sig == SIGINFO) {
         boost::asio::post(
             signals.get_executor().context(),
@@ -110,6 +116,8 @@ void SignalHandler(boost::asio::signal_set &signals,
         );
         return;
     }
+#endif
+
     if (tcp && !tcp->Stopped()) {
         tcp->Stop();
     }
