@@ -42,6 +42,8 @@ list(APPEND COMMON_DEPS
 
 if(WIN32)
     add_definitions(-DWINDOWS)
+elseif(UNIX AND NOT APPLE)
+    add_definitions(-DLINUX)
 endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)

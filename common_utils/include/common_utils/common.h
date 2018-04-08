@@ -13,14 +13,20 @@
 #include <stdint.h>
 using ssize_t = ptrdiff_t;
 
-#else
+#else // WINDOWS
 
 #define __START_PACKED
 #define __END_PACKED
 #define __PACKED       __attribute__((__packed__))
 #define __SFINIT(member, ...) member = __VA_ARGS__
 
-#endif
+#endif // WINDOWS
+
+#ifdef LINUX
+
+#define SIGINFO 29
+
+#endif // LINUX
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
