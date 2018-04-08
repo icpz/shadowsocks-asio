@@ -2,6 +2,7 @@
 #define __BASIC_STREAM_SERVER__
 
 #include <utility>
+#include <sstream>
 #include <unordered_map>
 #include <boost/asio.hpp>
 
@@ -34,6 +35,8 @@ public: \
     bool Stopped() const { \
         return !running_; \
     } \
+ \
+    void DumpConnections() const; \
  \
 private: \
     void DoAccept(); \
@@ -76,6 +79,18 @@ void __server_name::Stop() { \
             p->Close(); \
         } \
     } \
+} \
+ \
+void __server_name::DumpConnections() const { \
+    std::ostringstream oss; \
+    oss << "Current connections: " << sessions_.size() << std::endl; \
+    for (auto &kv : sessions_) { \
+        auto conn = kv.second.lock(); \
+        if (conn) { \
+            oss << conn->DumpToStr() << std::endl; \
+        } \
+    } \
+    LOG(INFO) << oss.str(); \
 } \
  \
 void __server_name::ReleaseSession(std::weak_ptr<__server_name> server, __session_name *ptr) { \

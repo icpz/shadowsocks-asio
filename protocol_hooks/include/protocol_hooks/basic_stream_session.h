@@ -2,6 +2,7 @@
 #define __BASIC_STREAM_SESSION_H__
 
 #include <utility>
+#include <sstream>
 #include <boost/asio.hpp>
 
 #include <common_utils/util.h>
@@ -27,6 +28,21 @@ public:
         VLOG(1) << "Closing: " << client_.socket.remote_endpoint();
         client_.CancelAll();
         target_.CancelAll();
+    }
+
+    std::string DumpToStr() const {
+        boost::system::error_code ec;
+        std::ostringstream oss;
+        oss << client_.socket.remote_endpoint(ec);
+        if (ec) {
+            oss << "(closed)";
+        }
+        oss << " <-> ";
+        oss << target_.socket.remote_endpoint(ec);
+        if (ec) {
+            oss << "(closed)";
+        }
+        return oss.str();
     }
 
 protected:
