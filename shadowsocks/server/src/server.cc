@@ -29,6 +29,7 @@ public:
         protocol_->DoInitializeProtocol(
             client_,
             [this, self]() {
+                client_.timer.cancel();
                 auto after_connected = std::bind(&Session::DoWriteToTarget, self);
                 if (protocol_->NeedResolve()) {
                     std::string hostname, port;
@@ -48,6 +49,7 @@ public:
                 }
             }
         );
+        TimerAgain(self, client_);
     }
 
 private:
@@ -66,6 +68,7 @@ private:
                     LOG(WARNING) << "Unexcepted write error " << ec.message();
                     return;
                 }
+                client_.timer.cancel();
                 client_.buf.Reset();
                 StartStream();
             }

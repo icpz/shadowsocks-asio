@@ -141,12 +141,12 @@ protected:
                         dest.timer.cancel();
                         src.buf.Reset();
                         DoRelayStream(self, src, dest, std::move(wrapper));
-                        TimerAgain(self, src);
                     }
                 );
                 TimerAgain(self, dest);
             }
         );
+        TimerAgain(self, src);
     }
 
     void TimerExpiredCallBack(Peer &peer, boost::system::error_code ec) {
