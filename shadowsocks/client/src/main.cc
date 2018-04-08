@@ -6,6 +6,10 @@
 #include "server.h"
 #include "parse_args.h"
 
+void SignalHandler(boost::asio::signal_set &signals,
+                   std::shared_ptr<Socks5ProxyServer> tcp,
+                   boost::system::error_code ec, int sig);
+
 int main(int argc, char *argv[]) {
     int log_level;
     Plugin plugin;
@@ -21,7 +25,7 @@ int main(int argc, char *argv[]) {
 
     tcp_server.reset(new Socks5ProxyServer(ctx, args.bind_ep, args.generator, args.timeout));
 
-    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
+    boost::asio::signal_set signals(ctx, SIGINT, SIGTERM, SIGINFO);
 
     std::unique_ptr<boost::process::child> plugin_process;
     plugin_process = StartPlugin(plugin,
@@ -44,15 +48,13 @@ int main(int argc, char *argv[]) {
     );
 
     signals.async_wait(
-        [&tcp_server](boost::system::error_code ec, int sig) {
-            if (ec == boost::asio::error::operation_aborted) {
-                return;
-            }
-            LOG(INFO) << "Signal: " << sig << " received";
-            if (tcp_server && !tcp_server->Stopped()) {
-                tcp_server->Stop();
-            }
-        }
+        std::bind(
+            SignalHandler,
+            std::ref(signals),
+            tcp_server,
+            std::placeholders::_1,
+            std::placeholders::_2
+        )
     );
 
     ctx.run();
@@ -62,5 +64,33 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+void SignalHandler(boost::asio::signal_set &signals,
+                   std::shared_ptr<Socks5ProxyServer> tcp,
+                   boost::system::error_code ec, int sig) {
+    if (ec == boost::asio::error::operation_aborted) {
+        return;
+    }
+    LOG(INFO) << "Signal: " << sig << " received";
+    if (sig == SIGINFO) {
+        boost::asio::post(
+            signals.get_executor().context(),
+            [tcp]() {
+                tcp->DumpConnections();
+            }
+        );
+        signals.async_wait(
+            std::bind(
+                SignalHandler,
+                std::ref(signals), tcp,
+                std::placeholders::_1,
+                std::placeholders::_2
+            )
+        );
+    }
+    if (tcp && !tcp->Stopped()) {
+        tcp->Stop();
+    }
 }
 
