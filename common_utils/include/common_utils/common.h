@@ -24,7 +24,7 @@ using ssize_t = ptrdiff_t;
 
 #ifdef LINUX
 
-#define SIGINFO 29
+#define SIGINFO SIGUSR1
 
 #endif // LINUX
 
