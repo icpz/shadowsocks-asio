@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
         plugin_process->terminate();
     }
 
+    google::ShutDownCommandLineFlags();
+
     return 0;
 }
 

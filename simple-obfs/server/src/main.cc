@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
 
     ctx.run();
 
+    google::ShutDownCommandLineFlags();
+
     return 0;
 }
 

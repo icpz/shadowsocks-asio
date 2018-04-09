@@ -34,6 +34,9 @@ protected:
 
 class CryptoContext {
 public:
+
+    virtual ~CryptoContext() = default;
+
     virtual ssize_t Decrypt(Buffer &buf) = 0;
     virtual ssize_t Encrypt(Buffer &buf) = 0;
 
