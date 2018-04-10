@@ -431,10 +431,30 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
         }
 
         size_t ticket_len = CT_NTOHS(ticket->session_ticket_ext_len);
-        if (len < (ssize_t)ticket_len) {
+        len -= ticket_len;
+        if (len <= 0) {
             VLOG(2) << "deobfs need more";
             return 0;
         }
+
+        len -= sizeof(ExtServerName);
+        if (len <= 0) {
+            VLOG(2) << "deobfs need more";
+            return 0;
+        }
+
+        ExtServerName *sni = (ExtServerName *)((uint8_t *)ticket + sizeof(ExtSessionTicket) + ticket_len);
+        size_t host_len = CT_NTOHS(sni->server_name_len);
+        len -= host_len;
+        if (len < 0) {
+            VLOG(2) << "deobfs need more";
+            return 0;
+        }
+
+        std::string obfs_host;
+        obfs_host.reserve(host_len);
+        std::copy_n((uint8_t *)sni + sizeof(ExtServerName), host_len, std::back_inserter(obfs_host));
+        VLOG(1) << "obfs host: " << obfs_host;
 
         memmove(data, (uint8_t *)ticket + sizeof(ExtSessionTicket), ticket_len);
 
