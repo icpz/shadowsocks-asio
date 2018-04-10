@@ -33,9 +33,8 @@ public:
     virtual void ResetTarget(TargetInfo &target) {
     }
 
-    static void SetObfsArgs(ArgsType args) {
-        kArgs.reset(new ArgsType(std::move(args)));
-    }
+    static void SetObfsArgs(ArgsType args);
+
 protected:
     static std::shared_ptr<const ArgsType> kArgs;
 };

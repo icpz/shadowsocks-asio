@@ -5,7 +5,11 @@
 
 using ObfsGenerator = ObfsGeneratorFactory::ObfsGenerator;
 
- std::shared_ptr<const ObfsArgs> Obfuscator::kArgs = nullptr;
+std::shared_ptr<const ObfsArgs> Obfuscator::kArgs = nullptr;
+
+void Obfuscator::SetObfsArgs(ArgsType args) {
+    kArgs.reset(new ArgsType(std::move(args)));
+}
 
 boost::optional<ObfsGenerator>
     ObfsGeneratorFactory::GetGenerator(std::string name) {
