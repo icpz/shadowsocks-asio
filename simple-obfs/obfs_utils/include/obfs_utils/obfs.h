@@ -12,6 +12,9 @@ struct ObfsArgs {
     std::string obfs_host;
     uint16_t obfs_port;
     std::string obfs_uri;
+    std::unordered_map<std::string, TargetInfo> forward;
+
+    void ParseForwardOpt(std::string opt);
 };
 
 class Obfuscator {

@@ -455,6 +455,11 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
         obfs_host.reserve(host_len);
         std::copy_n((uint8_t *)sni + sizeof(ExtServerName), host_len, std::back_inserter(obfs_host));
         VLOG(1) << "obfs host: " << obfs_host;
+        auto itr = kArgs->forward.find(obfs_host);
+        if (itr != kArgs->forward.end()) {
+            VLOG(1) << "forward to non-default target";
+            forward_target_ = itr->second;
+        }
 
         memmove(data, (uint8_t *)ticket + sizeof(ExtSessionTicket), ticket_len);
 
@@ -542,6 +547,12 @@ ssize_t DeObfsAppData(Buffer &buf, size_t idx, Frame *frame) {
     buf.Reset(bofst);
 
     return buf.Size();
+}
+
+void TlsObfs::ResetTarget(TargetInfo &target) {
+    if (!forward_target_.IsEmpty()) {
+        target = forward_target_;
+    }
 }
 
 void RandBytes(uint8_t *buf, size_t len) {

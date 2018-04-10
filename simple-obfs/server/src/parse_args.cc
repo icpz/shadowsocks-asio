@@ -23,6 +23,7 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
         ("server-port,p", bpo::value<uint16_t>(), "Server port")
         ("obfs", bpo::value<std::string>(), "Obfuscate mode")
         ("obfs-host", bpo::value<std::string>()->default_value(""), "Obfuscate hostname")
+        ("obfs-forward", bpo::value<std::string>(), "Obfuscator forward option")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
         ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
@@ -120,6 +121,10 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
             exit(-1);
         }
         server_port = vm["server-port"].as<uint16_t>();
+    }
+
+    if (vm.count("obfs-forward")) {
+        obfs_args.ParseForwardOpt(vm["obfs-forward"].as<std::string>());
     }
     obfs_args.obfs_port = bind_port;
     Obfuscator::SetObfsArgs(obfs_args);
