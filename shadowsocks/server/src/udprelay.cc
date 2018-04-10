@@ -132,7 +132,8 @@ void UdpRelayServer::DoReceiveFromTarget(std::shared_ptr<UdpPeer> peer) {
                     return;
                 }
                 LOG(WARNING) << "unable to receive "
-                             << peer->socket.remote_endpoint();
+                             << peer->socket.remote_endpoint()
+                             << ", " << ec.message();
                 return;
             }
             peer->timer.cancel();
