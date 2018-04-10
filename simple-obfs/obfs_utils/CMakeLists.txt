@@ -13,6 +13,7 @@ list(APPEND DEPS
 
 list(APPEND SOURCES
      src/obfs.cc
+     src/obfs_proto.cc
      src/tls.cc
     )
 

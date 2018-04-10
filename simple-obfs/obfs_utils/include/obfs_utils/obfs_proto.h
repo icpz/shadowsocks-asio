@@ -37,6 +37,7 @@ private:
 class ObfsServer : public BasicProtocol {
     typedef boost::asio::ip::tcp tcp;
     using ObfsPointer = std::unique_ptr<Obfuscator>;
+    using NextStage = BasicProtocol::NextStage;
 public:
 
     ObfsServer(tcp::endpoint ep, ObfsPointer obfs)
@@ -51,6 +52,10 @@ public:
 
     ~ObfsServer() = default;
 
+    void DoInitializeProtocol(Peer &peer, NextStage next) {
+        DoHandshake(peer, std::move(next));
+    }
+
     ssize_t Wrap(Buffer &buf) {
         return obfs_->ObfsResponse(buf);
     }
@@ -60,6 +65,8 @@ public:
     }
 
 private:
+    void DoHandshake(Peer &peer, NextStage next);
+
     ObfsPointer obfs_;
 };
 

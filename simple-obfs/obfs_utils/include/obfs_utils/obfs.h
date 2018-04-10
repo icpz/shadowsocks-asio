@@ -7,7 +7,7 @@
 #include <boost/optional.hpp>
 #include <boost/utility/string_view.hpp>
 
-#include <common_utils/buffer.h>
+#include <common_utils/util.h>
 
 class Obfuscator {
     typedef boost::asio::ip::tcp tcp;
@@ -19,6 +19,9 @@ public:
 
     virtual ssize_t ObfsResponse(Buffer &buf) = 0;
     virtual ssize_t DeObfsRequest(Buffer &buf) = 0;
+
+    virtual void ResetTarget(TargetInfo &target) {
+    }
 
 protected:
 };
