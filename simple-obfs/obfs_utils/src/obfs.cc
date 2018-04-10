@@ -3,13 +3,15 @@
 
 using ObfsGenerator = ObfsGeneratorFactory::ObfsGenerator;
 
+ std::shared_ptr<const ObfsArgs> Obfuscator::kArgs = nullptr;
+
 boost::optional<ObfsGenerator>
-    ObfsGeneratorFactory::GetGenerator(std::string name, std::string host) {
+    ObfsGeneratorFactory::GetGenerator(std::string name) {
         auto itr = generator_functions_.find(name);
         if (itr == generator_functions_.end()) {
             return boost::none;
         }
-        return itr->second(std::move(host));
+        return itr->second;
     }
 
 std::shared_ptr<ObfsGeneratorFactory>

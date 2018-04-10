@@ -14,8 +14,8 @@ struct Frame {
 class TlsObfs : public Obfuscator {
 public:
 
-    TlsObfs(boost::string_view obfs_host)
-        : hostname_(obfs_host) {
+    TlsObfs()
+        : hostname_(kArgs->obfs_host) {
         session_id_.back() = 0;
     }
 

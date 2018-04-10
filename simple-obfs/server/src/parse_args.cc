@@ -13,6 +13,7 @@ using boost::asio::ip::tcp;
 
 void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
     auto factory = ObfsGeneratorFactory::Instance();
+    Obfuscator::ArgsType obfs_args;
     bpo::options_description desc("Simple Obfs Server");
     desc.add_options()
         ("bind-address,b", bpo::value<std::string>()->default_value("::"), "Bind address")
@@ -61,9 +62,9 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
         exit(-1);
     }
 
-    std::string obfs_host = vm["obfs-host"].as<std::string>();
+    obfs_args.obfs_host = vm["obfs-host"].as<std::string>();
 
-    auto ObfsGenerator = factory->GetGenerator(vm["obfs"].as<std::string>(), obfs_host);
+    auto ObfsGenerator = factory->GetGenerator(vm["obfs"].as<std::string>());
     if (!ObfsGenerator) {
         std::cerr << "Invalid obfs mode!" << std::endl;
         exit(-1);
@@ -120,6 +121,8 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
         }
         server_port = vm["server-port"].as<uint16_t>();
     }
+    obfs_args.obfs_port = bind_port;
+    Obfuscator::SetObfsArgs(obfs_args);
     args->bind_ep = tcp::endpoint(bind_address, bind_port);
     args->timeout = vm["timeout"].as<size_t>() * 1000;
 
