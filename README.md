@@ -108,6 +108,8 @@ make install
 - ~~obfs plugin~~ (done)
 - http obfs, uri support
 - ~~session management~~ (done)
+- replace boost::program_options with gflags
+- more obfuscator
 
 ## License
 
