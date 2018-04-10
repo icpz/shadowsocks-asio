@@ -27,7 +27,7 @@ protected:
 };
 
 template<class ObfsType>
-decltype(auto) MakeObfsGenerator(boost::string_view host) {
+decltype(auto) MakeObfsGenerator(std::string host) {
     static_assert(std::is_base_of<Obfuscator, ObfsType>::value, "The obfuscator type must inherit from Obfuscator");
     return [host]() { return std::unique_ptr<Obfuscator>(new ObfsType(host)); };
 }
@@ -39,14 +39,14 @@ class ObfsGeneratorFactory {
 public:
     using ObfsGenerator = std::function<std::unique_ptr<Obfuscator>(void)>;
 
-    boost::optional<ObfsGenerator> GetGenerator(std::string name, boost::string_view host);
+    boost::optional<ObfsGenerator> GetGenerator(std::string name, std::string host);
 
     static std::shared_ptr<ObfsGeneratorFactory> Instance();
 
     void GetAllRegisteredNames(std::vector<std::string> &names);
 
 private:
-    using ObfsGeneratorFunc = std::function<ObfsGenerator(boost::string_view host)>;
+    using ObfsGeneratorFunc = std::function<ObfsGenerator(std::string host)>;
 
     ObfsGeneratorFactory() = default;
     std::unordered_map<std::string, ObfsGeneratorFunc> generator_functions_;
@@ -70,7 +70,7 @@ public:
         auto factory = ObfsGeneratorFactory::Instance();
         factory->RegisterObfuscator( 
             name,
-            [](boost::string_view host) {
+            [](std::string host) {
                 return MakeObfsGenerator<Obfuscator>(host);
             }
         );

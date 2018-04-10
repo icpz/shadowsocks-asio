@@ -4,12 +4,12 @@
 using ObfsGenerator = ObfsGeneratorFactory::ObfsGenerator;
 
 boost::optional<ObfsGenerator>
-    ObfsGeneratorFactory::GetGenerator(std::string name, boost::string_view host) {
+    ObfsGeneratorFactory::GetGenerator(std::string name, std::string host) {
         auto itr = generator_functions_.find(name);
         if (itr == generator_functions_.end()) {
             return boost::none;
         }
-        return itr->second(name);
+        return itr->second(std::move(host));
     }
 
 std::shared_ptr<ObfsGeneratorFactory>
