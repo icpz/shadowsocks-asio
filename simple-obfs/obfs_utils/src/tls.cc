@@ -558,9 +558,9 @@ void TlsObfs::ResetTarget(TargetInfo &target) {
 }
 
 void RandBytes(uint8_t *buf, size_t len) {
-    static std::random_device rd;
-    static std::uniform_int_distribution<uint16_t> u(0, 255);
-    std::generate_n(buf, len, std::bind(std::ref(u), std::ref(rd)));
+    static std::default_random_engine e{ std::random_device{}() };
+    static std::uniform_int_distribution<uint16_t> u{0, 255};
+    std::generate_n(buf, len, std::bind(std::ref(u), std::ref(e)));
 }
 
 static const ObfsGeneratorRegister<TlsObfs> kReg("tls");
