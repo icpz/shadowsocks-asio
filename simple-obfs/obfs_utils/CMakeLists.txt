@@ -15,6 +15,7 @@ list(APPEND SOURCES
      src/obfs.cc
      src/obfs_proto.cc
      src/tls.cc
+     src/http.cc
     )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
