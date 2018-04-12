@@ -106,10 +106,12 @@ make install
 - ~~cross-platform support~~ (done)
 - udp relay (current only available for ss-server)
 - ~~obfs plugin~~ (done)
-- http obfs, uri support
+- ~~http obfs, uri support~~ (done)
 - ~~session management~~ (done)
 - replace boost::program_options with gflags
 - more obfuscator
+- tunnel
+- obfs failover
 
 ## License
 
