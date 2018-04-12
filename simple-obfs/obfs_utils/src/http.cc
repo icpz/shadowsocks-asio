@@ -105,6 +105,18 @@ ssize_t HttpObfs::ObfsResponse(Buffer &buf) {
 }
 
 ssize_t HttpObfs::DeObfsRequest(Buffer &buf) {
+    if (deobfs_stage_) {
+        return buf.Size();
+    }
+    ssize_t check_result = CheckHeader(buf);
+    if (check_result <= 0) {
+        if (check_result == 0) {
+            VLOG(2) << "DeObfsHeader need more";
+        } else {
+            LOG(WARNING) << "CheckHeader failed";
+        }
+        return check_result;
+    }
     return DeObfsHeader(buf);
 }
 
@@ -112,9 +124,6 @@ ssize_t HttpObfs::DeObfsHeader(Buffer &buf) {
     if (deobfs_stage_) {
         return buf.Size();
     }
-    ssize_t check_result = CheckHeader(buf);
-    if (check_result <= 0) { return check_result; }
-    deobfs_stage_ = 1;
 
     char *data = (char *)buf.GetData();
     ssize_t len = buf.Size();
@@ -134,6 +143,7 @@ ssize_t HttpObfs::DeObfsHeader(Buffer &buf) {
     }
 
     if (unused_length) {
+        deobfs_stage_ = 1;
         buf.DeQueue(unused_length);
     }
     return unused_length ? buf.Size() : 0;
@@ -143,9 +153,14 @@ ssize_t CheckHeader(Buffer &buf) {
     char *data = (char *)buf.GetData();
     ssize_t len = buf.Size();
 
-    if (len < 4) { return 0; }
+    VLOG(3) << "checking header...";
+    if (len < 4) {
+        VLOG(2) << "CheckHeader need more";
+        return 0;
+    }
 
     if (strncasecmp(data, "GET", 3) != 0) {
+        LOG(WARNING) << "method mismatch: " << std::string(data, 3);
         return -1;
     }
 
@@ -153,9 +168,15 @@ ssize_t CheckHeader(Buffer &buf) {
         std::string protocol;
         ssize_t result = GetHeader("Upgrade:", data, len, protocol);
         if (result <= 0) {
+            if (result == 0) {
+                VLOG(2) << "CheckHeader need more";
+            } else {
+                LOG(WARNING) << "Upgrade not found";
+            }
             return result;
         }
         if (strncmp(protocol.c_str(), "websocket", result) != 0) {
+            LOG(WARNING) << "protocol mismatch";
             return -1;
         }
     }
