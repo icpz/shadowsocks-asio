@@ -215,7 +215,7 @@ ssize_t NextHeader(const char **data, size_t *len) {
     *len  -= 2;
 
     header_len = 0;
-    while (*len > header_len + 1
+    while (*len > (size_t)(header_len + 1)
            && (*data)[header_len] != '\r'
            && (*data)[header_len + 1] != '\n') {
         header_len++;
