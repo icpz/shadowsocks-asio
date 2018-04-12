@@ -54,8 +54,9 @@ ssize_t HttpObfs::ObfsRequest(Buffer &buf) {
         host_port += std::to_string(kArgs->obfs_port);
     }
 
-    char b64[24];
-    RandB64(b64, sizeof b64);
+    char b64[25];
+    RandB64(b64, (sizeof b64) - 1);
+    b64[24] = 0;
 
     kHttpRequestTemplate % kArgs->obfs_uri % host_port
                          % kMajorVersion % kMinorVersion
@@ -83,7 +84,7 @@ ssize_t HttpObfs::ObfsResponse(Buffer &buf) {
     static int kMinorVersion = kEngine() % 12;
 
     char datetime[64];
-    char b64[24];
+    char b64[25];
 
     std::time_t now;
     std::tm *tm_now;
@@ -92,7 +93,8 @@ ssize_t HttpObfs::ObfsResponse(Buffer &buf) {
     tm_now = std::localtime(&now);
     std::strftime(datetime, sizeof datetime, "%a, %d %b %Y %H:%M:%S GMT", tm_now);
 
-    RandB64(b64, sizeof b64);
+    RandB64(b64, (sizeof b64) - 1);
+    b64[24] = 0;
 
     kHttpResponseTemplate % kMajorVersion % kMinorVersion % datetime % b64;
     auto obfs_buf = boost::str(kHttpResponseTemplate);
@@ -187,7 +189,7 @@ ssize_t CheckHeader(Buffer &buf) {
 void RandB64(char *buf, size_t len) {
     static const char kB64Chars[] = \
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    static std::uniform_int_distribution<> u{ 0, (sizeof kB64Chars) - 1 };
+    static std::uniform_int_distribution<> u{ 0, (sizeof kB64Chars) - 2 };
 
     auto last = std::generate_n(buf, len - 2, [&]() { return kB64Chars[u(kEngine)]; });
     if (kEngine() % 2) {
