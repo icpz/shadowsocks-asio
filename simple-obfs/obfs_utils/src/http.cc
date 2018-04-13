@@ -12,6 +12,12 @@
 
 #include "obfs_utils/http.h"
 
+#ifdef WINDOWS
+
+#define strncasecmp _strnicmp
+
+#endif // WINDOWS
+
 static auto kHttpRequestTemplate = boost::format(
     "GET %s HTTP/1.1\r\n"
     "Host: %s\r\n"
