@@ -13,7 +13,9 @@ list(APPEND DEPS
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 list(APPEND SOURCES
-     src/shadowsocks.cc
+     src/client.cc
+     src/server.cc
+     src/tunnel.cc
     )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
