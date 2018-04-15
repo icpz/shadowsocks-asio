@@ -8,16 +8,21 @@
 
 #include "protocol_hooks/basic_protocol.h"
 
+struct StreamServerArgs {
+    boost::asio::ip::tcp::endpoint bind_ep;
+    std::function<std::unique_ptr<BasicProtocol>()> generator;
+    size_t timeout = 60000;
+};
+
 #define DECLARE_STREAM_SERVER(__server_name, __session_name) \
 class __server_name : public std::enable_shared_from_this<__server_name> { \
     typedef boost::asio::ip::tcp tcp; \
     using ProtocolPtr = std::unique_ptr<BasicProtocol>; \
     using ProtocolGenerator = std::function<ProtocolPtr(void)>; \
 public: \
-    __server_name(boost::asio::io_context &ctx, tcp::endpoint ep, \
-           ProtocolGenerator protocol_generator, size_t ttl = 60000) \
-        : acceptor_(ctx, std::move(ep)), timeout_(ttl), \
-          protocol_generator_(std::move(protocol_generator)) { \
+    __server_name(boost::asio::io_context &ctx, StreamServerArgs args) \
+        : acceptor_(ctx, std::move(args.bind_ep)), timeout_(args.timeout), \
+          protocol_generator_(std::move(args.generator)) { \
         LOG(INFO) << #__server_name " running at " << acceptor_.local_endpoint(); \
         running_ = true; \
         DoAccept(); \
@@ -100,12 +105,6 @@ void __server_name::ReleaseSession(std::weak_ptr<__server_name> server, __sessio
     } \
     delete ptr; \
 }
-
-struct StreamServerArgs {
-    boost::asio::ip::tcp::endpoint bind_ep;
-    std::function<std::unique_ptr<BasicProtocol>()> generator;
-    size_t timeout;
-};
 
 #endif
 

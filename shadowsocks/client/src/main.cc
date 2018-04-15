@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
     std::shared_ptr<Socks5ProxyServer> tcp_server;
 
-    tcp_server.reset(new Socks5ProxyServer(ctx, args.bind_ep, args.generator, args.timeout));
+    tcp_server.reset(new Socks5ProxyServer(ctx, args));
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 

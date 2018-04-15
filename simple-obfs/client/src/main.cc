@@ -17,10 +17,7 @@ int main(int argc, char *argv[]) {
 
     boost::asio::io_context ctx;
 
-    auto server = \
-        std::make_shared<ForwardServer>(
-            ctx, args.bind_ep, args.generator, args.timeout
-        );
+    auto server = std::make_shared<ForwardServer>(ctx, args);
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 

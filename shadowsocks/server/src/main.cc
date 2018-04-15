@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     if (!udp_param.udp_only) {
-        tcp_server.reset(new ForwardServer(ctx, args.bind_ep, args.generator, args.timeout));
+        tcp_server.reset(new ForwardServer(ctx, args));
 
         plugin_process = StartPlugin(plugin,
             [&ctx, &tcp_server, &udp_server, &signals]() {
