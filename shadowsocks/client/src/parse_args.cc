@@ -107,6 +107,12 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
             server_port = p->local_port;
         }
     }
+    std::shared_ptr<TargetInfo> remote_target{ new TargetInfo };
+    if (server_need_resolve) {
+        remote_target->SetTarget(server_host, server_port);
+    } else {
+        remote_target->SetTarget(server_address, server_port);
+    }
 
     if (!vm.count("method")) {
         std::cerr << "Please specify a cipher method using -m option" << std::endl;
@@ -117,18 +123,11 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
         std::cerr << "Invalid cipher type!" << std::endl;
         exit(-1);
     }
-    if (!server_need_resolve) {
-        boost::asio::ip::tcp::endpoint ep(server_address, server_port);
-        args->generator = \
-            [ep, g = std::move(CryptoGenerator)]() {
-                return GetProtocol<ShadowsocksClient>(ep, (*g)());
-            };
-    } else {
-        args->generator = \
-            [s = std::move(server_host), p = server_port, g = std::move(CryptoGenerator)]() {
-                return GetProtocol<ShadowsocksClient>(s, p, (*g)());
-            };
-    }
+
+    args->generator = \
+        [target = std::move(remote_target), g = std::move(CryptoGenerator)]() {
+            return GetProtocol<ShadowsocksClient>(target, (*g)());
+        };
     return;
 }
 

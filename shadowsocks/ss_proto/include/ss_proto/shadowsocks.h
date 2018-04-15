@@ -14,19 +14,10 @@ class ShadowsocksClient : public BasicProtocol {
     typedef boost::asio::ip::tcp tcp;
     using CryptoContextPtr = std::unique_ptr<CryptoContext>;
 public:
-    ShadowsocksClient(tcp::endpoint ep, CryptoContextPtr crypto_context)
+    ShadowsocksClient(std::shared_ptr<TargetInfo> remote_info, CryptoContextPtr crypto_context)
         : header_buf_(300UL),
-          remote_endpoint_(std::move(ep)),
+          remote_info_(std::move(remote_info)),
           crypto_context_(std::move(crypto_context)) {
-        need_resolve_ = false;
-    }
-
-    ShadowsocksClient(std::string host, uint16_t port, CryptoContextPtr crypto_context)
-        : header_buf_(300UL),
-          remote_host_(std::move(host)),
-          remote_port_(std::to_string(port)),
-          crypto_context_(std::move(crypto_context)) {
-        need_resolve_ = true;
     }
 
     ~ShadowsocksClient() { }
@@ -42,24 +33,24 @@ public:
 
     void DoInitializeProtocol(Peer &peer, BasicProtocol::NextStage next);
 
-    tcp::endpoint GetEndpoint() const { return remote_endpoint_; }
+    tcp::endpoint GetEndpoint() const {
+        return tcp::endpoint(remote_info_->GetIp(), remote_info_->GetPort());
+    }
+
     bool GetResolveArgs(std::string &hostname, std::string &port) const {
         if (!NeedResolve()) return false;
-        hostname = remote_host_;
-        port = remote_port_;
+        hostname = remote_info_->GetHostname();
+        port = std::to_string(remote_info_->GetPort());
         return true;
     }
 
     bool NeedResolve() const {
-        return need_resolve_;
+        return remote_info_->NeedResolve();
     }
 
 private:
-    bool need_resolve_;
     Buffer header_buf_;
-    tcp::endpoint remote_endpoint_;
-    std::string remote_host_;
-    std::string remote_port_;
+    std::shared_ptr<const TargetInfo> remote_info_;
     CryptoContextPtr crypto_context_;
 };
 
