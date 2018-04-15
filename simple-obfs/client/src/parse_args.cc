@@ -23,7 +23,7 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
         ("server-port,p", bpo::value<uint16_t>(), "Server port")
         ("obfs", bpo::value<std::string>(), "Obfuscate mode")
         ("obfs-host", bpo::value<std::string>(), "Obfuscate hostname")
-        ("obfs-uri", bpo::value<std::string>()->default_value("index.html"), "Obfuscate uri")
+        ("obfs-uri", bpo::value<std::string>()->default_value("/index.html"), "Obfuscate uri")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
         ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
@@ -124,6 +124,9 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
     }
     obfs_args.obfs_port = server_port;
     obfs_args.obfs_uri = vm["obfs-uri"].as<std::string>();
+    if (obfs_args.obfs_uri.empty() || obfs_args.obfs_uri[0] != '/') {
+        obfs_args.obfs_uri.insert(0, "/");
+    }
     Obfuscator::SetObfsArgs(obfs_args);
     args->bind_ep = tcp::endpoint(bind_address, bind_port);
     args->timeout = vm["timeout"].as<size_t>() * 1000;
