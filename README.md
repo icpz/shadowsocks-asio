@@ -112,7 +112,7 @@ make install
 - ~~session management~~ (done)
 - replace boost::program_options with gflags
 - more obfuscator
-- tunnel
+- ~~tunnel~~ (done)
 - obfs failover
 
 ## License
