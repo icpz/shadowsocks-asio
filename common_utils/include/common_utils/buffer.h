@@ -8,18 +8,6 @@
 
 #include "common_utils/common.h"
 
-class Buffer;
-
-namespace std {
-
-constexpr uint8_t *begin(Buffer &buf) noexcept;
-constexpr const uint8_t *begin(const Buffer &buf) noexcept;
-
-constexpr uint8_t *end(Buffer &buf) noexcept;
-constexpr const uint8_t *end(const Buffer &buf) noexcept;
-
-}; // namespace std
-
 class Buffer {
 public:
     Buffer(size_t max_length = 8192, size_t max_read_length_once = 16384)
@@ -44,9 +32,14 @@ public:
 
     template<class Container>
     void AppendData(const Container &cont) {
-        PrepareCapacity(cont.size());
+        size_t extra_len = cont.size();
+        PrepareCapacity(extra_len);
         std::copy(std::begin(cont), std::end(cont), End());
-        Append(cont.size());
+        Append(extra_len);
+    }
+
+    void AppendData(const Buffer &buf) {
+        AppendData(buf.GetData(), buf.Size());
     }
 
     void AppendData(const uint8_t *buf, size_t len) {
@@ -62,6 +55,10 @@ public:
         std::copy_backward(Begin(), End(), End() + extra_len);
         Append(extra_len);
         std::copy(std::begin(cont), std::end(cont), Begin());
+    }
+
+    void PrependData(const Buffer &buf) {
+        PrependData(buf.GetData(), buf.Size());
     }
 
     void PrependData(const uint8_t *buf, size_t len) {
@@ -117,26 +114,6 @@ private:
     size_t curr_;
     size_t max_read_length_once_;
 };
-
-namespace std {
-
-constexpr uint8_t *begin(Buffer &buf) noexcept {
-    return buf.Begin();
-}
-
-constexpr const uint8_t *begin(const Buffer &buf) noexcept {
-    return buf.Begin();
-}
-
-constexpr uint8_t *end(Buffer &buf) noexcept {
-    return buf.End();
-}
-
-constexpr const uint8_t *end(const Buffer &buf) noexcept {
-    return buf.End();
-}
-
-}; // namespace std
 
 #endif
 
