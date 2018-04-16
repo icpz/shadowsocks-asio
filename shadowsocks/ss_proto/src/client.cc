@@ -11,8 +11,7 @@ uint8_t ShadowsocksClient::ParseHeader(Buffer &buf, size_t start_offset) {
     if (reply != socks5::SUCCEEDED_REP) {
         return reply;
     }
-    header_buf_.Append(buf.Size() - start_offset);
-    std::copy(buf.Begin() + start_offset, buf.End(), header_buf_.Begin());
+    header_buf_.AppendData(buf.Begin() + start_offset, buf.Size() - start_offset);
     return reply;
 }
 

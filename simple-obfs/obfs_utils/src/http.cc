@@ -68,10 +68,7 @@ ssize_t HttpObfs::ObfsRequest(Buffer &buf) {
                          % kMajorVersion % kMinorVersion
                          % b64 % buf.Size();
     auto obfs_buf = boost::str(kHttpRequestTemplate);
-    size_t buf_len = buf.Size();
-    buf.Append(obfs_buf.size());
-    std::copy_backward(buf.Begin(), buf.Begin() + buf_len, buf.End());
-    std::copy(obfs_buf.begin(), obfs_buf.end(), buf.Begin());
+    buf.PrependData(obfs_buf);
 
     return buf.Size();
 }
@@ -104,10 +101,7 @@ ssize_t HttpObfs::ObfsResponse(Buffer &buf) {
 
     kHttpResponseTemplate % kMajorVersion % kMinorVersion % datetime % b64;
     auto obfs_buf = boost::str(kHttpResponseTemplate);
-    size_t buf_len = buf.Size();
-    buf.Append(obfs_buf.size());
-    std::copy_backward(buf.Begin(), buf.Begin() + buf_len, buf.End());
-    std::copy(obfs_buf.begin(), obfs_buf.end(), buf.Begin());
+    buf.PrependData(obfs_buf);
 
     return buf.Size();
 }

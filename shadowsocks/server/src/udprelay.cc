@@ -24,8 +24,7 @@ void UdpRelayServer::DoReceive() {
 
 void UdpRelayServer::ProcessRelay(udp::endpoint ep, size_t length) {
     auto write_buf = std::make_unique<Buffer>(length);
-    write_buf->Append(length);
-    std::copy_n(buf_.begin(), length, write_buf->Begin());
+    write_buf->AppendData(buf_.data(), length);
     if (crypto_->DecryptOnce(*write_buf) <= 0) {
         LOG(WARNING) << "udp decrypt error";
         return;
@@ -138,12 +137,8 @@ void UdpRelayServer::DoReceiveFromTarget(std::shared_ptr<UdpPeer> peer) {
             }
             peer->timer.cancel();
             peer->buf.Append(length);
-            size_t header_length = peer->header.size();
-            peer->buf.PrepareCapacity(header_length);
-            std::copy_backward(peer->buf.Begin(), peer->buf.End(),
-                               peer->buf.End() + header_length);
-            std::copy_n(peer->header.begin(), header_length, peer->buf.Begin());
-            peer->buf.Append(header_length);
+
+            peer->buf.PrependData(peer->header);
 
             crypto_->EncryptOnce(peer->buf);
             socket_.async_send_to(
