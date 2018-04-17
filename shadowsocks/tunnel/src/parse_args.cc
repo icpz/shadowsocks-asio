@@ -72,16 +72,33 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
     }
     TargetInfo forward_target;
     {
+        bool is_ipv6 = false;
         auto target_str = vm["forward-to"].as<std::string>();
         auto ind = target_str.find_last_of(':');
-        if (ind == std::string::npos) {
+        if (ind == 0 || ind == std::string::npos) {
             std::cerr << "Invalid forward address" << std::endl;
             exit(-1);
         }
         auto target_host = target_str.substr(0, ind);
+        if (target_host[0] == '[') {
+            if (target_host.back() != ']') {
+                std::cerr << "Invalid forward address" << std::endl;
+                exit(-1);
+            };
+            target_host = target_host.substr(1, target_host.size() - 2);
+            is_ipv6 = true;
+        }
         auto target_port = std::stoi(target_str.substr(ind + 1));
         boost::system::error_code ec;
-        auto target_address = boost::asio::ip::make_address(target_host, ec);
+        boost::asio::ip::address target_address;
+        if (is_ipv6) {
+            target_address = boost::asio::ip::make_address_v6(target_host, ec);
+            if (ec) {
+                std::cerr << "Invalid forward address" << std::endl;
+                exit(-1);
+            }
+        }
+        target_address = boost::asio::ip::make_address_v4(target_host, ec);
         if (ec) {
             forward_target.SetTarget(target_host, target_port);
         } else {
