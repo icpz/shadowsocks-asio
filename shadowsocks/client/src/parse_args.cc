@@ -70,11 +70,6 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
         exit(-1);
     }
     std::string server_host = vm["server-address"].as<std::string>();
-    auto server_address = boost::asio::ip::make_address(server_host, ec);
-    bool server_need_resolve = false;
-    if (ec) {
-        server_need_resolve = true;
-    }
     uint16_t server_port = vm["server-port"].as<uint16_t>();
 
     if (!vm.count("password")) {
@@ -102,16 +97,14 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
                 p->plugin_options = vm["plugin-opts"].as<std::string>();
             }
 
-            server_need_resolve = false;
-            server_address = boost::asio::ip::make_address(p->local_address);
+            server_host = p->local_address;
             server_port = p->local_port;
         }
     }
-    std::shared_ptr<TargetInfo> remote_target{ new TargetInfo };
-    if (server_need_resolve) {
-        remote_target->SetTarget(server_host, server_port);
-    } else {
-        remote_target->SetTarget(server_address, server_port);
+    auto remote_target = std::make_shared<TargetInfo>(MakeTarget(server_host, server_port));
+    if (remote_target->IsEmpty()) {
+        std::cerr << "Invalid server host / port" << std::endl;
+        exit(-1);
     }
 
     if (!vm.count("method")) {

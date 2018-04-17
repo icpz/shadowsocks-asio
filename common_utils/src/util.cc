@@ -56,3 +56,50 @@ size_t GetTargetFromSocks5Address(const uint8_t *buf, uint8_t *reply, TargetInfo
     return header_length;
 }
 
+TargetInfo MakeTarget(std::string host_string, uint16_t port) {
+    boost::system::error_code ec;
+    TargetInfo result;
+    bool is_domain = false;
+    boost::asio::ip::address address;
+    if (host_string.empty()) { goto __make_target_bad_state; }
+    address = boost::asio::ip::make_address_v4(host_string, ec);
+    if (ec) {
+        bool is_ipv6 = false;
+        if (host_string[0] == '[' && host_string.back() == ']') {
+            host_string = host_string.substr(1, host_string.size() - 1);
+            is_ipv6 = true;
+        }
+        address = boost::asio::ip::make_address_v6(host_string, ec);
+        if (is_ipv6 && ec) { goto __make_target_bad_state; }
+        is_domain = true;
+    }
+    if (!is_domain) {
+        result.SetTarget(address, port);
+    } else {
+        result.SetTarget(host_string, port);
+    }
+    return result;
+
+__make_target_bad_state:
+    return TargetInfo{};
+}
+
+TargetInfo MakeTarget(std::string host_port_string, char delimiter) {
+    auto ind = host_port_string.find_last_of(delimiter);
+    size_t end_index;
+    std::string port_string;
+    uint16_t port;
+    if (ind == std::string::npos || ind == 0) {
+        goto __make_target_bad_state;
+    }
+    port_string = host_port_string.substr(ind + 1);
+    port = std::stoi(port_string, &end_index);
+    if (end_index != port_string.size()) {
+        goto __make_target_bad_state;
+    }
+
+    return MakeTarget(host_port_string.substr(0, ind), port);
+__make_target_bad_state:
+    return TargetInfo{};
+}
+

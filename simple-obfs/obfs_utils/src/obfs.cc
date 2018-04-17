@@ -38,26 +38,21 @@ void ObfsGeneratorFactory::GetAllRegisteredNames(std::vector<std::string> &names
 }
 
 void ObfsArgs::ParseForwardOpt(std::string opt) {
+    opt.erase(
+        std::remove_if(opt.begin(), opt.end(), boost::is_any_of(" \t")),
+        opt.end()
+    );
     if (opt.empty()) return;
     std::vector<std::string> items;
     boost::split(items, opt, [](char c) { return c == ','; });
     for (auto &item : items) {
         std::vector<std::string> args;
-        boost::split(args, item, boost::is_any_of("$%"));
-        if (args.size() != 3) {
+        boost::split(args, item, boost::is_any_of("$"));
+        if (args.size() != 2) {
             continue;
         }
 
-        boost::asio::ip::address address;
-        boost::system::error_code ec;
-        address = boost::asio::ip::make_address(args[1], ec);
-        TargetInfo target;
-        if (ec) {
-            target.SetTarget(args[1], std::stoi(args[2]));
-        } else {
-            target.SetTarget(address, std::stoi(args[2]));
-        }
-        forward[args[0]] = std::move(target);
+        forward[args[0]] = MakeTarget(args[1], '%');
     }
 }
 

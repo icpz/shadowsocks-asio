@@ -35,6 +35,7 @@ struct Peer {
 class TargetInfo {
 public:
     using IpAddress = boost::asio::ip::address;
+
     bool NeedResolve() const {
         return state_ == 2;
     }
@@ -72,6 +73,9 @@ private:
     boost::variant<IpAddress, std::string> address_;
     uint16_t port_;
 };
+
+TargetInfo MakeTarget(std::string host_string, uint16_t port);
+TargetInfo MakeTarget(std::string host_port_string, char delimiter = ':');
 
 size_t GetTargetFromSocks5Address(const uint8_t *buf, uint8_t *reply, TargetInfo &target);
 
