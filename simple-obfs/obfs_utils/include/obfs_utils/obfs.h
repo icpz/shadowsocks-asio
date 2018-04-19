@@ -12,7 +12,7 @@ struct ObfsArgs {
     std::string obfs_host;
     uint16_t obfs_port;
     std::string obfs_uri;
-    std::unordered_map<std::string, TargetInfo> forward;
+    std::unordered_map<std::string, std::shared_ptr<const TargetInfo>> forward;
 
     void ParseForwardOpt(std::string opt);
 };
@@ -30,7 +30,7 @@ public:
     virtual ssize_t ObfsResponse(Buffer &buf) = 0;
     virtual ssize_t DeObfsRequest(Buffer &buf) = 0;
 
-    virtual void ResetTarget(TargetInfo &target) {
+    virtual void ResetTarget(std::shared_ptr<const TargetInfo> &target) {
     }
 
     static void SetObfsArgs(ArgsType args);

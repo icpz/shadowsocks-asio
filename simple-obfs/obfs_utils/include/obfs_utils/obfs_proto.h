@@ -10,14 +10,9 @@ class ObfsClient : public BasicProtocol {
     using ObfsPointer = std::unique_ptr<Obfuscator>;
 public:
 
-    ObfsClient(tcp::endpoint ep, ObfsPointer obfs)
-        : obfs_(std::move(obfs)) {
-        target_.SetTarget(ep.address(), ep.port());
-    }
-
-    ObfsClient(std::string host, uint16_t port, ObfsPointer obfs)
-        : obfs_(std::move(obfs)) {
-        target_.SetTarget(host, port);
+    ObfsClient(std::shared_ptr<TargetInfo> remote_info, ObfsPointer obfs)
+        : obfs_(std::move(obfs)),
+          remote_info_(std::move(remote_info)) {
     }
 
     ~ObfsClient() = default;
@@ -30,8 +25,24 @@ public:
         return obfs_->DeObfsResponse(buf);
     }
 
+    tcp::endpoint GetEndpoint() const {
+        return tcp::endpoint(remote_info_->GetIp(), remote_info_->GetPort());
+    }
+
+    bool GetResolveArgs(std::string &hostname, std::string &port) const {
+        if (!NeedResolve()) return false;
+        hostname = remote_info_->GetHostname();
+        port = std::to_string(remote_info_->GetPort());
+        return true;
+    }
+
+    bool NeedResolve() const {
+        return remote_info_->NeedResolve();
+    }
+
 private:
     ObfsPointer obfs_;
+    std::shared_ptr<const TargetInfo> remote_info_;
 };
 
 class ObfsServer : public BasicProtocol {
@@ -40,14 +51,9 @@ class ObfsServer : public BasicProtocol {
     using NextStage = BasicProtocol::NextStage;
 public:
 
-    ObfsServer(tcp::endpoint ep, ObfsPointer obfs)
-        : obfs_(std::move(obfs)) {
-        target_.SetTarget(ep.address(), ep.port());
-    }
-
-    ObfsServer(std::string host, uint16_t port, ObfsPointer obfs)
-        : obfs_(std::move(obfs)) {
-        target_.SetTarget(host, port);
+    ObfsServer(std::shared_ptr<TargetInfo> remote_info, ObfsPointer obfs)
+        : obfs_(std::move(obfs)),
+          remote_info_(std::move(remote_info)) {
     }
 
     ~ObfsServer() = default;
@@ -64,10 +70,26 @@ public:
         return obfs_->DeObfsRequest(buf);
     }
 
+    tcp::endpoint GetEndpoint() const {
+        return tcp::endpoint(remote_info_->GetIp(), remote_info_->GetPort());
+    }
+
+    bool GetResolveArgs(std::string &hostname, std::string &port) const {
+        if (!NeedResolve()) return false;
+        hostname = remote_info_->GetHostname();
+        port = std::to_string(remote_info_->GetPort());
+        return true;
+    }
+
+    bool NeedResolve() const {
+        return remote_info_->NeedResolve();
+    }
+
 private:
     void DoHandshake(Peer &peer, NextStage next);
 
     ObfsPointer obfs_;
+    std::shared_ptr<const TargetInfo> remote_info_;
 };
 
 #endif

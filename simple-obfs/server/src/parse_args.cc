@@ -131,21 +131,16 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
     args->bind_ep = tcp::endpoint(bind_address, bind_port);
     args->timeout = vm["timeout"].as<size_t>() * 1000;
 
-    boost::system::error_code ec;
-    auto server_address = boost::asio::ip::make_address(server_host, ec);
-
-    if (!ec) {
-        boost::asio::ip::tcp::endpoint ep(server_address, server_port);
-        args->generator = \
-            [ep, g = std::move(ObfsGenerator)]() {
-                return GetProtocol<ObfsServer>(ep, (*g)());
-            };
-    } else {
-        args->generator = \
-            [s = std::move(server_host), p = server_port, g = std::move(ObfsGenerator)]() {
-                return GetProtocol<ObfsServer>(s, p, (*g)());
-            };
+    auto target_info = std::make_shared<TargetInfo>(MakeTarget(server_host, server_port));
+    if (target_info->IsEmpty()) {
+        std::cerr << "Invalid server host / port" << std::endl;
+        exit(-1);
     }
+
+    args->generator = \
+        [target = std::move(target_info), g = std::move(ObfsGenerator)]() {
+            return GetProtocol<ObfsServer>(target, (*g)());
+        };
     return;
 }
 

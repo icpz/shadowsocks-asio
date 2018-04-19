@@ -551,8 +551,8 @@ ssize_t DeObfsAppData(Buffer &buf, size_t idx, Frame *frame) {
     return buf.Size();
 }
 
-void TlsObfs::ResetTarget(TargetInfo &target) {
-    if (!forward_target_.IsEmpty()) {
+void TlsObfs::ResetTarget(std::shared_ptr<const TargetInfo> &target) {
+    if (forward_target_) {
         target = forward_target_;
     }
 }

@@ -52,7 +52,7 @@ void ObfsArgs::ParseForwardOpt(std::string opt) {
             continue;
         }
 
-        forward[args[0]] = MakeTarget(args[1], '%');
+        forward[args[0]] = std::make_shared<const TargetInfo>(MakeTarget(args[1], '%'));
     }
 }
 

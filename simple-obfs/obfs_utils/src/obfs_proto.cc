@@ -27,7 +27,7 @@ void ObfsServer::DoHandshake(Peer &peer, NextStage next) {
                 return;
             }
 
-            obfs_->ResetTarget(target_);
+            obfs_->ResetTarget(remote_info_);
             next();
         }
     );
