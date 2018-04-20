@@ -8,20 +8,23 @@ using boost::asio::ip::tcp;
 
 uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
     uint8_t reply;
-    header_length_ = GetTargetFromSocks5Address(buf.GetData() + start_offset, &reply, target_);
+    auto target = std::make_shared<TargetInfo>();
+    header_length_ = \
+        GetTargetFromSocks5Address(buf.GetData() + start_offset, &reply, *target);
+    remote_info_ = std::move(target);
 
     return reply;
 }
 
 bool BasicProtocol::GetResolveArgs(std::string &hostname, std::string &port) const {
     if (!NeedResolve()) return false;
-    hostname = target_.GetHostname();
-    port = std::to_string(target_.GetPort());
+    hostname = remote_info_->GetHostname();
+    port = std::to_string(remote_info_->GetPort());
     return true;
 }
 
 tcp::endpoint BasicProtocol::GetEndpoint() const {
     if (NeedResolve()) return tcp::endpoint();
-    return tcp::endpoint{ target_.GetIp(), target_.GetPort() };
+    return tcp::endpoint{ remote_info_->GetIp(), remote_info_->GetPort() };
 }
 

@@ -18,7 +18,12 @@ protected:
 public:
     using Wrapper = std::function<ssize_t(Buffer &)>;
 
-    BasicProtocol() : initialized_(false) { }
+    explicit
+    BasicProtocol(std::shared_ptr<TargetInfo> remote_info = nullptr)
+        : remote_info_(std::move(remote_info)),
+          initialized_(false) {
+    }
+
     virtual ~BasicProtocol() { }
 
     virtual uint8_t ParseHeader(Buffer &buf, size_t start_offset);
@@ -30,12 +35,12 @@ public:
     }
     virtual tcp::endpoint GetEndpoint() const;
     virtual bool GetResolveArgs(std::string &hostname, std::string &port) const;
-    virtual bool NeedResolve() const { return target_.NeedResolve(); }
-    virtual bool HasTarget() const { return !target_.IsEmpty(); }
+    virtual bool NeedResolve() const { return remote_info_->NeedResolve(); }
+    virtual bool HasTarget() const { return !remote_info_->IsEmpty(); }
 
 protected:
     size_t header_length_;
-    TargetInfo target_;
+    std::shared_ptr<const TargetInfo> remote_info_;
     bool initialized_;
 };
 

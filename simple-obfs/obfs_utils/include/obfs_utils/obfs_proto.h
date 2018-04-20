@@ -11,8 +11,8 @@ class ObfsClient : public BasicProtocol {
 public:
 
     ObfsClient(std::shared_ptr<TargetInfo> remote_info, ObfsPointer obfs)
-        : obfs_(std::move(obfs)),
-          remote_info_(std::move(remote_info)) {
+        : BasicProtocol(std::move(remote_info)),
+          obfs_(std::move(obfs)) {
     }
 
     ~ObfsClient() = default;
@@ -25,24 +25,8 @@ public:
         return obfs_->DeObfsResponse(buf);
     }
 
-    tcp::endpoint GetEndpoint() const {
-        return tcp::endpoint(remote_info_->GetIp(), remote_info_->GetPort());
-    }
-
-    bool GetResolveArgs(std::string &hostname, std::string &port) const {
-        if (!NeedResolve()) return false;
-        hostname = remote_info_->GetHostname();
-        port = std::to_string(remote_info_->GetPort());
-        return true;
-    }
-
-    bool NeedResolve() const {
-        return remote_info_->NeedResolve();
-    }
-
 private:
     ObfsPointer obfs_;
-    std::shared_ptr<const TargetInfo> remote_info_;
 };
 
 class ObfsServer : public BasicProtocol {
@@ -52,8 +36,8 @@ class ObfsServer : public BasicProtocol {
 public:
 
     ObfsServer(std::shared_ptr<TargetInfo> remote_info, ObfsPointer obfs)
-        : obfs_(std::move(obfs)),
-          remote_info_(std::move(remote_info)) {
+        : BasicProtocol(std::move(remote_info)),
+          obfs_(std::move(obfs)) {
     }
 
     ~ObfsServer() = default;
@@ -70,26 +54,10 @@ public:
         return obfs_->DeObfsRequest(buf);
     }
 
-    tcp::endpoint GetEndpoint() const {
-        return tcp::endpoint(remote_info_->GetIp(), remote_info_->GetPort());
-    }
-
-    bool GetResolveArgs(std::string &hostname, std::string &port) const {
-        if (!NeedResolve()) return false;
-        hostname = remote_info_->GetHostname();
-        port = std::to_string(remote_info_->GetPort());
-        return true;
-    }
-
-    bool NeedResolve() const {
-        return remote_info_->NeedResolve();
-    }
-
 private:
     void DoHandshake(Peer &peer, NextStage next);
 
     ObfsPointer obfs_;
-    std::shared_ptr<const TargetInfo> remote_info_;
 };
 
 #endif

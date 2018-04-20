@@ -16,8 +16,8 @@ class ShadowsocksClient : public BasicProtocol {
     using NextStage = BasicProtocol::NextStage;
 public:
     ShadowsocksClient(std::shared_ptr<TargetInfo> remote_info, CryptoContextPtr crypto_context)
-        : header_buf_(300UL),
-          remote_info_(std::move(remote_info)),
+        : BasicProtocol(std::move(remote_info)),
+          header_buf_(300UL),
           crypto_context_(std::move(crypto_context)) {
     }
 
@@ -34,24 +34,8 @@ public:
 
     void DoInitializeProtocol(Peer &peer, NextStage next);
 
-    tcp::endpoint GetEndpoint() const {
-        return tcp::endpoint(remote_info_->GetIp(), remote_info_->GetPort());
-    }
-
-    bool GetResolveArgs(std::string &hostname, std::string &port) const {
-        if (!NeedResolve()) return false;
-        hostname = remote_info_->GetHostname();
-        port = std::to_string(remote_info_->GetPort());
-        return true;
-    }
-
-    bool NeedResolve() const {
-        return remote_info_->NeedResolve();
-    }
-
 private:
     Buffer header_buf_;
-    std::shared_ptr<const TargetInfo> remote_info_;
     CryptoContextPtr crypto_context_;
 };
 
