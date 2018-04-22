@@ -122,15 +122,15 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
         std::cerr << "Please specify a cipher method using -m option" << std::endl;
         exit(-1);
     }
-    auto CryptoGenerator = factory->GetGenerator(vm["method"].as<std::string>(), password);
-    if (!CryptoGenerator) {
+    auto crypto_generator = factory->GetGenerator(vm["method"].as<std::string>(), password);
+    if (!crypto_generator) {
         std::cerr << "Invalid cipher type!" << std::endl;
         exit(-1);
     }
 
     args->generator = \
-        [target = std::move(remote_target), g = std::move(CryptoGenerator)]() {
-            return GetProtocol<ShadowsocksTunnel>(target, (*g)());
+        [target = std::move(remote_target), g = *crypto_generator]() {
+            return GetProtocol<ShadowsocksTunnel>(target, g());
         };
     return;
 }

@@ -65,8 +65,8 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
 
     obfs_args.obfs_host = vm["obfs-host"].as<std::string>();
 
-    auto ObfsGenerator = factory->GetGenerator(vm["obfs"].as<std::string>());
-    if (!ObfsGenerator) {
+    auto obfs_generator = factory->GetGenerator(vm["obfs"].as<std::string>());
+    if (!obfs_generator) {
         std::cerr << "Invalid obfs mode!" << std::endl;
         exit(-1);
     }
@@ -138,8 +138,8 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
     }
 
     args->generator = \
-        [target = std::move(remote_target), g = std::move(ObfsGenerator)]() {
-            return GetProtocol<ObfsClient>(target, (*g)());
+        [target = std::move(remote_target), g = *obfs_generator]() {
+            return GetProtocol<ObfsClient>(target, g());
         };
     return;
 }

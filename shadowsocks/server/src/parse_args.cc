@@ -77,8 +77,8 @@ void ParseArgs(int argc, char *argv[],
         std::cerr << "Please specify a cipher method using -m option" << std::endl;
         exit(-1);
     }
-    auto CryptoGenerator = factory->GetGenerator(vm["method"].as<std::string>(), password);
-    if (!CryptoGenerator) {
+    auto crypto_generator = factory->GetGenerator(vm["method"].as<std::string>(), password);
+    if (!crypto_generator) {
         std::cerr << "Invalid cipher type!" << std::endl;
         exit(-1);
     }
@@ -88,7 +88,7 @@ void ParseArgs(int argc, char *argv[],
     if (udp->udp_enable || udp->udp_only) {
         udp->bind_ep.address(bind_address);
         udp->bind_ep.port(bind_port);
-        udp->crypto = (*CryptoGenerator)();
+        udp->crypto = (*crypto_generator)();
     }
 
     *log_level = vm["verbose"].as<int>();
@@ -118,8 +118,8 @@ void ParseArgs(int argc, char *argv[],
     args->timeout = vm["timeout"].as<size_t>() * 1000;
 
     args->generator = \
-        [g = std::move(CryptoGenerator)]() {
-            return GetProtocol<ShadowsocksServer>((*g)());
+        [g = *crypto_generator]() {
+            return GetProtocol<ShadowsocksServer>(g());
         };
 }
 
