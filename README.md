@@ -4,6 +4,8 @@
 
 This is a simple port of shadowsocks.
 
+*I'm a little busy these days... Will be back at Sept.*
+
 ## Build from source
 
 - [windows](#windows)
