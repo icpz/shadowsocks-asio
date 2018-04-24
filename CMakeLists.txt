@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.9)
-project(socks5-proxy)
+project(shadowsocks-asio)
 
 set(CMAKE_SKIP_INSTALL_RPATH TRUE)
 
