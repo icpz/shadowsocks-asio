@@ -212,7 +212,6 @@ private:
                     return;
                 }
                 if (reply == socks5::SUCCEEDED_REP) {
-                    VLOG(2) << "Start streaming";
                     client_.timer.cancel();
                     client_.buf.Reset();
                     protocol_->DoInitializeProtocol(
@@ -228,6 +227,7 @@ private:
     }
 
     void StartStream() {
+        VLOG(2) << "Start streaming";
         auto self(shared_from_this());
         DoRelayStream(self, client_, target_,
                       std::bind(&BasicProtocol::Wrap,

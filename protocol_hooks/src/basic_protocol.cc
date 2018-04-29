@@ -8,10 +8,12 @@ using boost::asio::ip::tcp;
 
 uint8_t BasicProtocol::ParseHeader(Buffer &buf, size_t start_offset) {
     uint8_t reply;
-    auto target = std::make_shared<TargetInfo>();
+    TargetInfo target;
     header_length_ = \
-        GetTargetFromSocks5Address(buf.GetData() + start_offset, &reply, *target);
-    remote_info_ = std::move(target);
+        GetTargetFromSocks5Address(buf.GetData() + start_offset, &reply, target);
+    if (!remote_info_) {
+        remote_info_ = std::make_shared<TargetInfo>(std::move(target));
+    }
 
     return reply;
 }
