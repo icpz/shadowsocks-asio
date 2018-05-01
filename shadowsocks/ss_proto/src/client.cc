@@ -25,7 +25,8 @@ void ShadowsocksClient::DoInitializeProtocol(Peer &peer, NextStage next) {
                     || ec == boost::asio::error::operation_aborted) {
                     VLOG(1) << ec.message() << " while initializing protocol";
                 } else {
-                    LOG(WARNING) << "unexcepted error while initializing protocol: " << ec.message();
+                    LOG(WARNING) << "Unexcepted error while initializing protocol: "
+                                 << ec.message();
                 }
                 return;
             }

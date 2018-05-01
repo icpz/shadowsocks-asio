@@ -27,7 +27,7 @@ void ShadowsocksTunnel::InitializeTunnel(const TargetInfo &forward_target) {
         }
     }
     boost::endian::big_uint16_buf_t port_buf{ forward_target.GetPort() };
-    kHeaderBuf.insert(kHeaderBuf.end(), (uint8_t *)&port_buf, (uint8_t *)&port_buf + 2);;
+    kHeaderBuf.insert(kHeaderBuf.end(), (uint8_t *)&port_buf, (uint8_t *)&port_buf + 2);
 }
 
 void ShadowsocksTunnel::DoInitializeProtocol(Peer &peer, BasicProtocol::NextStage next) {
