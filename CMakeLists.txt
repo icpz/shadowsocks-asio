@@ -25,6 +25,7 @@ find_package(Threads REQUIRED)
 list(APPEND COMMON_DEPS
      Boost::system
      glog::glog
+     ${CMAKE_DL_LIBS}
     )
 
 if(WIN32)
