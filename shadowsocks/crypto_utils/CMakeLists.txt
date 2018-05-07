@@ -4,31 +4,30 @@ project(crypto_utils)
 set(CMAKE_CXX_STANDARD 14)
 
 if(APPLE)
-    set(ENV{PKG_CONFIG_PATH} "/usr/local/opt/openssl/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
     find_package(PkgConfig REQUIRED)
-
-    pkg_search_module(LIBCRYPTO REQUIRED libcrypto)
     pkg_search_module(LIBSODIUM REQUIRED libsodium)
-
-    include_directories(${LIBCRYPTO_INCLUDE_DIRS})
     include_directories(${LIBSODIUM_INCLUDE_DIRS})
-
-    set(LIBCRYPTO ${LIBCRYPTO_LDFLAGS})
     set(LIBSODIUM ${LIBSODIUM_LDFLAGS})
+
+    set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
 elseif(WIN32)
     add_definitions(-DSODIUM_STATIC)
-    find_path(LIBCRYPTO_INC openssl/evp.h)
     find_path(LIBSODIUM_INC sodium.h)
-    find_library(LIBCRYPTO NAMES libeay32 libcrypto)
     find_library(LIBSODIUM NAMES libsodium)
 else()
-    set(LIBCRYPTO "-lcrypto")
     set(LIBSODIUM "-lsodium")
+endif()
+
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+find_package(OpenSSL 1.0.2 REQUIRED)
+
+if(${OPENSSL_VERSION} VERSION_GREATER_EQUAL 1.1)
+    message(FATAL_ERROR "libcrypto too new, require <= 1.0.2")
 endif()
 
 list(APPEND DEPS
      common_utils
-     ${LIBCRYPTO}
+     OpenSSL::Crypto
      ${LIBSODIUM}
      ${COMMON_DEPS}
     )
@@ -52,3 +51,4 @@ if(WIN32)
 else()
     install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
 endif()
+

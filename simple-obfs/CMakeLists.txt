@@ -5,10 +5,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(obfs_utils)
 
-find_package(Threads REQUIRED)
-
 list(APPEND DEPS
-     ${BOOSTPO}
+     Boost::program_options
      common_utils
      protocol_hooks
      obfs_utils

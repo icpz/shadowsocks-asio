@@ -7,10 +7,8 @@ add_subdirectory(crypto_utils)
 add_subdirectory(plugin_utils)
 add_subdirectory(ss_proto)
 
-find_package(Threads REQUIRED)
-
 list(APPEND DEPS
-     ${BOOSTPO}
+     Boost::program_options
      common_utils
      crypto_utils
      plugin_utils
