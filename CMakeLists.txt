@@ -22,11 +22,11 @@ find_package(Boost 1.65.0 REQUIRED COMPONENTS system filesystem program_options)
 find_package(glog 0.3.4 REQUIRED)
 find_package(Threads REQUIRED)
 
-list(APPEND COMMON_DEPS
-     Boost::system
-     glog::glog
-     ${CMAKE_DL_LIBS}
-    )
+set(COMMON_DEPS
+    Boost::system
+    glog::glog
+    ${CMAKE_DL_LIBS}
+   )
 
 if(WIN32)
     add_definitions(-DWINDOWS)

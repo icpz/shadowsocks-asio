@@ -3,16 +3,16 @@ project(protocol_hooks)
 
 set(CMAKE_CXX_STANDARD 14)
 
-list(APPEND DEPS
-     common_utils
-     ${COMMON_DEPS}
-    )
+set(DEPS
+    common_utils
+    ${COMMON_DEPS}
+   )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-list(APPEND SOURCES
-     src/basic_protocol.cc
-    )
+set(SOURCES
+    src/basic_protocol.cc
+   )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})

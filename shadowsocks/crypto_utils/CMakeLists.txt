@@ -25,22 +25,22 @@ if(${OPENSSL_VERSION} VERSION_GREATER_EQUAL 1.1)
     message(FATAL_ERROR "libcrypto too new, require <= 1.0.2")
 endif()
 
-list(APPEND DEPS
-     common_utils
-     OpenSSL::Crypto
-     ${LIBSODIUM}
-     ${COMMON_DEPS}
-    )
+set(DEPS
+    common_utils
+    OpenSSL::Crypto
+    ${LIBSODIUM}
+    ${COMMON_DEPS}
+   )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-list(APPEND SOURCES
-     src/cipher.cc
-     src/crypto.cc
-     src/chacha20_poly1305_ietf.cc
-     src/aes_gcm_family.cc
-     src/aes_cfb_family.cc
-    )
+set(SOURCES
+    src/cipher.cc
+    src/crypto.cc
+    src/chacha20_poly1305_ietf.cc
+    src/aes_gcm_family.cc
+    src/aes_cfb_family.cc
+   )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})

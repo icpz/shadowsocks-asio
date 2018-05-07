@@ -5,15 +5,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(obfs_utils)
 
-list(APPEND DEPS
-     Boost::program_options
-     common_utils
-     protocol_hooks
-     obfs_utils
-     ${COMMON_DEPS}
-     Threads::Threads
-    )
-
 add_subdirectory(client)
 add_subdirectory(server)
 

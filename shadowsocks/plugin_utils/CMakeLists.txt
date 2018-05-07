@@ -3,19 +3,19 @@ project(plugin_utils)
 
 set(CMAKE_CXX_STANDARD 14)
 
-list(APPEND DEPS
-     common_utils
-     Boost::filesystem
-     ${COMMON_DEPS}
-    )
+set(DEPS
+    common_utils
+    Boost::filesystem
+    ${COMMON_DEPS}
+   )
 
-list(APPEND SOURCES
-     src/plugin.cc
-    )
+set(SOURCES
+    src/plugin.cc
+   )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_library(${PROJECT_NAME} ${SOURCES})
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

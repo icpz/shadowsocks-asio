@@ -5,12 +5,23 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-list(APPEND SOURCES
-     src/server.cc
-     src/parse_args.cc
-     src/udprelay.cc
-     src/main.cc
-    )
+set(SOURCES
+    src/server.cc
+    src/parse_args.cc
+    src/udprelay.cc
+    src/main.cc
+   )
+
+set(DEPS
+    common_utils
+    crypto_utils
+    plugin_utils
+    protocol_hooks
+    ss_proto
+    Threads::Threads
+    Boost::program_options
+    ${COMMON_DEPS}
+   )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})

@@ -3,20 +3,20 @@ project(ss_proto)
 
 set(CMAKE_CXX_STANDARD 14)
 
-list(APPEND DEPS
-     common_utils
-     crypto_utils
-     protocol_hooks
-     ${COMMON_DEPS}
-    )
+set(DEPS
+    common_utils
+    crypto_utils
+    protocol_hooks
+    ${COMMON_DEPS}
+   )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-list(APPEND SOURCES
-     src/client.cc
-     src/server.cc
-     src/tunnel.cc
-    )
+set(SOURCES
+    src/client.cc
+    src/server.cc
+    src/tunnel.cc
+   )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})
