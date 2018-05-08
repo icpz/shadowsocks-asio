@@ -55,7 +55,7 @@ cmake --build . --target INSTALL --config Release
 ```bash
 # change into boost source directory
 ./bootstrap.sh --with-libraries=system,program_options,filesystem
-./b2 threading=multi
+./b2 cxxflags=-fPIC threading=multi -j2
 ./b2 install
 ```
 
