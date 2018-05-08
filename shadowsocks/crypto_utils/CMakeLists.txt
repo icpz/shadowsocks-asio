@@ -4,19 +4,12 @@ project(crypto_utils)
 set(CMAKE_CXX_STANDARD 14)
 
 if(APPLE)
-    find_package(PkgConfig REQUIRED)
-    pkg_search_module(LIBSODIUM REQUIRED libsodium)
-    include_directories(${LIBSODIUM_INCLUDE_DIRS})
-    set(LIBSODIUM ${LIBSODIUM_LDFLAGS})
-
     set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
 elseif(WIN32)
     add_definitions(-DSODIUM_STATIC)
-    find_path(LIBSODIUM_INC sodium.h)
-    find_library(LIBSODIUM NAMES libsodium)
-else()
-    set(LIBSODIUM "-lsodium")
 endif()
+
+find_library(LIBSODIUM NAMES libsodium.a libsodium sodium)
 
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL 1.0.2 REQUIRED)

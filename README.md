@@ -85,7 +85,7 @@ ldconfig
 ##### Prepare
 
 ```bash
-brew install cmake libsodium openssl pkg-config boost glog gflags
+brew install cmake libsodium openssl boost glog gflags
 ```
 
 ##### Clone repo and build
