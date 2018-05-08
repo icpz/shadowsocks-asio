@@ -59,10 +59,21 @@ cmake --build . --target INSTALL --config Release
 ./b2 install
 ```
 
+* Build libsodium from source
+
+```bash
+apt install -y autoconf libtool
+# change into libsodium source directory
+./autogen.sh
+./configure --with-pic=yes
+make -j2 install
+ldconfig
+```
+
 * Install rest dependencies
 
 ```bash
-apt install build-essential git-core libgoogle-glog-dev libsodium-dev libssl1.0-dev
+apt install build-essential git-core libgoogle-glog-dev libssl1.0-dev
 ```
 
 ##### Clone repo and build
