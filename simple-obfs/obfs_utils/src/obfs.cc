@@ -52,7 +52,9 @@ void ObfsArgs::ParseForwardOpt(std::string opt) {
             continue;
         }
 
-        forward[args[0]] = std::make_shared<const TargetInfo>(MakeTarget(args[1], '%'));
+        auto key = std::make_shared<std::regex>(args[0] + "$");
+
+        forward[key] = std::make_shared<const TargetInfo>(MakeTarget(args[1], '%'));
     }
 }
 

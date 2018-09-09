@@ -456,7 +456,16 @@ ssize_t TlsObfs::DeObfsRequest(Buffer &buf) {
             obfs_host.reserve(host_len);
             std::copy_n((uint8_t *)sni + sizeof(ExtServerName), host_len, std::back_inserter(obfs_host));
             VLOG(1) << "obfs host: " << obfs_host;
-            auto itr = kArgs->forward.find(obfs_host);
+            auto itr = \
+                std::find_if(
+                    std::begin(kArgs->forward),
+                    std::end(kArgs->forward),
+                    [&obfs_host](const auto &kv) {
+                        auto rexpr = kv.first;
+                        std::smatch match_result;
+                        return std::regex_match(obfs_host, *rexpr);
+                    }
+                );
             if (itr != kArgs->forward.end()) {
                 VLOG(1) << "forward to non-default target";
                 forward_target_ = itr->second;

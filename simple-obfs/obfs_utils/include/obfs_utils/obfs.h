@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <unordered_map>
+#include <regex>
 #include <boost/optional.hpp>
 
 #include <common_utils/util.h>
@@ -12,7 +13,7 @@ struct ObfsArgs {
     std::string obfs_host;
     uint16_t obfs_port;
     std::string obfs_uri;
-    std::unordered_map<std::string, std::shared_ptr<const TargetInfo>> forward;
+    std::unordered_map<std::shared_ptr<std::regex>, std::shared_ptr<const TargetInfo>> forward;
 
     void ParseForwardOpt(std::string opt);
 };
