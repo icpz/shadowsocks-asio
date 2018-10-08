@@ -201,10 +201,6 @@ ssize_t AeadCipher<key_len, nonce_len, tag_len>::EncryptOnce(Buffer &buf) {
         LOG(FATAL) << "unexpected call for EncryptOnce";
         return -1;
     }
-    if (buf.Size() > (size_t)0x3fff) {
-        LOG(ERROR) << "buf too long to encrypt once: " << buf.Size();
-        return -1;
-    }
 
     chunk_.reserve(buf.Size());
     std::copy(buf.Begin(), buf.End(), std::back_inserter(chunk_));
