@@ -38,6 +38,7 @@ void UdpRelayServer::ProcessRelay(udp::endpoint ep, size_t length) {
     }
 
     std::shared_ptr<UdpPeer> peer;
+    bool cache_missed = false;
     auto itr = targets_.find(ep);
     if (itr == targets_.end()
         || (peer = itr->second.lock()) == nullptr) {
@@ -51,17 +52,22 @@ void UdpRelayServer::ProcessRelay(udp::endpoint ep, size_t length) {
         std::copy_n(write_buf->Begin(), head_length, std::back_inserter(peer->header));
         peer->assoc_ep = ep;
         itr = targets_.emplace(ep, peer).first;
+        cache_missed = true;
     }
     write_buf->DeQueue(head_length);
 
     peer->timer.cancel();
-    if (target.NeedResolve()) {
-        auto host = target.GetHostname();
-        auto port = std::to_string(target.GetPort());
-        DoResolveTarget(std::move(host), std::move(port), peer, std::move(write_buf));
+    if (!cache_missed) {
+        DoSendToTarget(peer, std::move(write_buf));
     } else {
-        auto remote_ep = udp::endpoint(target.GetIp(), target.GetPort());
-        DoConnectTarget(std::move(remote_ep), peer, std::move(write_buf));
+        if (target.NeedResolve()) {
+            auto host = target.GetHostname();
+            auto port = std::to_string(target.GetPort());
+            DoResolveTarget(std::move(host), std::move(port), peer, std::move(write_buf));
+        } else {
+            auto remote_ep = udp::endpoint(target.GetIp(), target.GetPort());
+            DoConnectTarget(std::move(remote_ep), peer, std::move(write_buf));
+        }
     }
 }
 
@@ -96,6 +102,8 @@ void UdpRelayServer::DoConnectTarget(
                 return;
             }
             DoSendToTarget(peer, std::move(buf));
+            TimerAgain(peer);
+            DoReceiveFromTarget(peer);
         }
     );
 }
@@ -115,8 +123,6 @@ void UdpRelayServer::DoSendToTarget(
                              << ", " << ec.message();
                 return;
             }
-            TimerAgain(peer);
-            DoReceiveFromTarget(peer);
         }
     );
 }
@@ -135,6 +141,8 @@ void UdpRelayServer::DoReceiveFromTarget(std::shared_ptr<UdpPeer> peer) {
                              << ", " << ec.message();
                 return;
             }
+            VLOG(3) << "udp received " << length << " bytes from target " << peer->socket.remote_endpoint()
+                    << ", current buffer size: " << peer->buf.Size();
             peer->timer.cancel();
             peer->buf.Append(length);
 
