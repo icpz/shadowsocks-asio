@@ -116,7 +116,7 @@ void UdpRelayServer::DoSendToTarget(
     auto buffer = buf->GetConstBuffer(); // make sure buf is not moved before get its buffer
     peer->socket.async_send(
         std::move(buffer),
-        [this, peer, buf{ std::move(buf) }]
+        [peer, buf{ std::move(buf) }]
         (bsys::error_code ec, size_t length) {
             if (ec) {
                 LOG(WARNING) << "unable to send to target " << peer->socket.remote_endpoint()
