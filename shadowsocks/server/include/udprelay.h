@@ -15,10 +15,11 @@ template<> struct hash<boost::asio::ip::udp::endpoint> {
     typedef size_t result_type;
 
     result_type operator()(const argument_type &arg) const noexcept {
-        return  boost::hash_range(
-                    (const uint8_t *)arg.data(),
-                    (const uint8_t *)arg.data() + arg.capacity()
-                );
+        return \
+            boost::hash_range(
+                (const uint8_t *)arg.data(),
+                (const uint8_t *)arg.data() + arg.size()
+            );
     }
 };
 
