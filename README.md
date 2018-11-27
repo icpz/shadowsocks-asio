@@ -25,7 +25,7 @@ This is a simple port of shadowsocks.
 * Install dependencies:
 
 ```
-.\vcpkg.exe install openssl libsodium gflags glog boost-system boost-asio boost-program-options boost-process boost-format
+.\vcpkg.exe install openssl libsodium gflags glog boost-system boost-asio boost-program-options boost-process boost-format boost-endian boost-variant
 ```
 
 ##### Clone repo and build
