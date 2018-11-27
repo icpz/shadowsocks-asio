@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.13.0)
 project(crypto_utils)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -35,13 +35,7 @@ set(SOURCES
     src/aes_cfb_family.cc
    )
 
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
-target_link_libraries(${PROJECT_NAME} ${DEPS})
+add_library(${PROJECT_NAME} OBJECT ${SOURCES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${DEPS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-if(WIN32)
-    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
-else()
-    install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
-endif()
 

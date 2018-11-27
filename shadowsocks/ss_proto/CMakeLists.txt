@@ -18,7 +18,7 @@ set(SOURCES
     src/tunnel.cc
    )
 
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
-target_link_libraries(${PROJECT_NAME} ${DEPS})
+add_library(${PROJECT_NAME} OBJECT ${SOURCES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${DEPS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
