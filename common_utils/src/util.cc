@@ -70,8 +70,8 @@ TargetInfo MakeTarget(std::string host_string, uint16_t port) {
             is_ipv6 = true;
         }
         address = boost::asio::ip::make_address_v6(host_string, ec);
+        if (ec) { is_domain = true; }
         if (is_ipv6 && ec) { goto __make_target_bad_state; }
-        is_domain = true;
     }
     if (!is_domain) {
         result.SetTarget(address, port);
