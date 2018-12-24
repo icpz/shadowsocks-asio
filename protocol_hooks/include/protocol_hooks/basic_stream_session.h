@@ -60,9 +60,11 @@ protected:
                     client_.CancelAll();
                     return;
                 }
+                client_.timer.cancel();
                 DoConnectTarget(self, std::move(results), std::move(cb));
             }
         );
+        TimerAgain(self, client_);
     }
 
     template<class Self, class EndpointSequence>
@@ -158,6 +160,7 @@ protected:
             }
             client_.CancelAll();
             target_.CancelAll();
+            resolver_.cancel();
         }
     }
 
