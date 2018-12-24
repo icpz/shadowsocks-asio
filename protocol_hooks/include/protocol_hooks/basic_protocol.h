@@ -35,6 +35,7 @@ public:
     }
     virtual tcp::endpoint GetEndpoint() const;
     virtual bool GetResolveArgs(std::string &hostname, std::string &port) const;
+    virtual bool GetResolveArgs(std::string &hostname, uint16_t &port) const;
     virtual bool NeedResolve() const { return remote_info_->NeedResolve(); }
     virtual bool HasTarget() const { return !remote_info_->IsEmpty(); }
 

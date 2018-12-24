@@ -1,0 +1,3 @@
+[submodule "cares_service"]
+	path = cares_service
+	url = https://github.com/lcdtyph/cares-asio

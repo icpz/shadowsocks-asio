@@ -141,7 +141,8 @@ private:
 
                 boost::asio::ip::address address;
                 if (protocol_->NeedResolve()) {
-                    std::string hostname, port;
+                    std::string hostname;
+                    uint16_t port;
                     protocol_->GetResolveArgs(hostname, port);
                     DoResolveRemote(std::move(hostname), std::move(port));
                 } else {
@@ -154,12 +155,13 @@ private:
         TimerAgain(self, client_);
     }
 
-    void DoResolveRemote(std::string host, std::string port) {
+    template<typename Port>
+    void DoResolveRemote(std::string host, Port port) {
         auto self(shared_from_this());
         VLOG(2) << "Resolving to " << host << ":" << port;
         resolver_.async_resolve(
-            host, port,
-            [this, self](bsys::error_code ec, tcp::resolver::results_type results) {
+            std::move(host), std::move(port),
+            [this, self](bsys::error_code ec, resolver_type::results_type results) {
                 if (ec) {
                     VLOG(1) << "Unable to resolve: " << ec.message();
                     DoWriteSocks5Reply(socks5::HOST_UNREACHABLE_REP);

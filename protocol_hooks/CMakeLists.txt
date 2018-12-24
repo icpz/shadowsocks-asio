@@ -4,6 +4,7 @@ project(protocol_hooks)
 set(CMAKE_CXX_STANDARD 14)
 
 set(DEPS
+    cares_service
     common_utils
     ${COMMON_DEPS}
    )

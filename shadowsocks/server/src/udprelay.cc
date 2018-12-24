@@ -62,7 +62,7 @@ void UdpRelayServer::ProcessRelay(udp::endpoint ep, size_t length) {
     } else {
         if (target.NeedResolve()) {
             auto host = target.GetHostname();
-            auto port = std::to_string(target.GetPort());
+            auto port = target.GetPort();
             DoResolveTarget(std::move(host), std::move(port), peer, std::move(write_buf));
         } else {
             auto remote_ep = udp::endpoint(target.GetIp(), target.GetPort());
@@ -72,15 +72,15 @@ void UdpRelayServer::ProcessRelay(udp::endpoint ep, size_t length) {
 }
 
 void UdpRelayServer::DoResolveTarget(
-        std::string host, std::string port,
+        std::string host, uint16_t port,
         std::shared_ptr<UdpPeer> peer,
         std::unique_ptr<Buffer> buf
     ) {
 
     resolver_.async_resolve(
         host, port,
-        [this, peer, buf{ std::move(buf) }, host = std::move(host)]
-        (bsys::error_code ec, udp::resolver::results_type results) mutable {
+        [this, peer, buf{ std::move(buf) }, host]
+        (bsys::error_code ec, resolver_type::results_type results) mutable {
             if (ec) {
                 LOG(ERROR) << "unable to resolve " << host << ", " << ec.message();
                 return;

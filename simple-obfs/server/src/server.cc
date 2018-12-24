@@ -25,7 +25,8 @@ public:
         auto after_initialized = [this, self]() {
             auto after_connected = std::bind(&Session::DoWriteToTarget, self);
             if (protocol_->NeedResolve()) {
-                std::string hostname, port;
+                std::string hostname;
+                uint16_t port;
                 protocol_->GetResolveArgs(hostname, port);
                 VLOG(1) << "connecting to " << hostname;
                 DoResolveTarget(

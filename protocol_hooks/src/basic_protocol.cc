@@ -25,6 +25,13 @@ bool BasicProtocol::GetResolveArgs(std::string &hostname, std::string &port) con
     return true;
 }
 
+bool BasicProtocol::GetResolveArgs(std::string &hostname, uint16_t &port) const {
+    if (!NeedResolve()) return false;
+    hostname = remote_info_->GetHostname();
+    port = remote_info_->GetPort();
+    return true;
+}
+
 tcp::endpoint BasicProtocol::GetEndpoint() const {
     if (NeedResolve()) return tcp::endpoint();
     return tcp::endpoint{ remote_info_->GetIp(), remote_info_->GetPort() };

@@ -38,6 +38,7 @@ elseif(UNIX AND NOT APPLE)
     add_definitions(-DLINUX)
 endif()
 
+add_subdirectory(cares_service)
 add_subdirectory(common_utils)
 add_subdirectory(protocol_hooks)
 add_subdirectory(shadowsocks)

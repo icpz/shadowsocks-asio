@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/functional/hash.hpp>
 
+#include <cares_service/cares.hxx>
 #include <common_utils/buffer.h>
 #include <crypto_utils/cipher.h>
 
@@ -34,6 +35,7 @@ struct UdpServerParam {
 
 class UdpRelayServer : public std::enable_shared_from_this<UdpRelayServer> {
     typedef boost::asio::ip::udp udp;
+    using resolver_type = cares::udp::resolver;
 
     struct UdpPeer {
         UdpPeer(boost::asio::io_context &ctx)
@@ -75,7 +77,7 @@ private:
 
     void DoReceive();
     void ProcessRelay(udp::endpoint ep, size_t length);
-    void DoResolveTarget(std::string host, std::string port,
+    void DoResolveTarget(std::string host, uint16_t port,
                          std::shared_ptr<UdpPeer> peer, std::unique_ptr<Buffer> buf);
     void DoConnectTarget(udp::endpoint ep,
                          std::shared_ptr<UdpPeer> peer, std::unique_ptr<Buffer> buf);
@@ -91,7 +93,7 @@ private:
     std::array<uint8_t, 8192> buf_;
     udp::socket socket_;
     udp::endpoint sender_;
-    udp::resolver resolver_;
+    resolver_type resolver_;
     std::unique_ptr<CryptoContext> crypto_;
     std::unordered_map<udp::endpoint, std::weak_ptr<UdpPeer>> targets_;
 };

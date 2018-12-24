@@ -6,12 +6,14 @@
 #include <boost/asio.hpp>
 
 #include <common_utils/util.h>
+#include <cares_service/cares.hxx>
 
 #include "protocol_hooks/basic_protocol.h"
 
 class BasicStreamSession {
 protected:
     typedef boost::asio::ip::tcp tcp;
+    using resolver_type = cares::tcp::resolver;
 
 public:
     BasicStreamSession(tcp::socket socket,
@@ -28,6 +30,7 @@ public:
         VLOG(1) << "Closing: " << client_.socket.remote_endpoint();
         client_.CancelAll();
         target_.CancelAll();
+        resolver_.cancel();
     }
 
     std::string DumpToStr() const {
@@ -48,13 +51,13 @@ public:
 protected:
     using AfterConnected = std::function<void(void)>;
 
-    template<typename Self>
-    void DoResolveTarget(Self self, std::string host, std::string port, AfterConnected cb) {
+    template<typename Self, typename Port>
+    void DoResolveTarget(Self self, std::string host, Port port, AfterConnected cb) {
         VLOG(2) << "Resolving to " << host << ":" << port;
         resolver_.async_resolve(
-            host, port,
+            std::move(host), std::move(port),
             [this, self, cb = std::move(cb)]
-            (boost::system::error_code ec, tcp::resolver::results_type results) {
+            (boost::system::error_code ec, resolver_type::results_type results) {
                 if (ec) {
                     VLOG(1) << "Unable to resolve: " << ec.message();
                     client_.CancelAll();
@@ -178,7 +181,7 @@ protected:
     boost::asio::io_context &context_;
     Peer client_;
     Peer target_;
-    tcp::resolver resolver_;
+    resolver_type resolver_;
     std::unique_ptr<BasicProtocol> protocol_;
 };
 
