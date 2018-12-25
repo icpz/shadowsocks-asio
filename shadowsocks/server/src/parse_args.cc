@@ -15,7 +15,7 @@ using boost::asio::ip::tcp;
 void ParseArgs(int argc, char *argv[],
                StreamServerArgs *args,
                int *log_level, Plugin *p,
-               UdpServerParam *udp) {
+               UdpServerParam *udp, std::string *dns) {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Shadowsocks Server");
     desc.add_options()
@@ -29,6 +29,7 @@ void ParseArgs(int argc, char *argv[],
         ("udp-only,U", "Udp only")
         ("plugin", bpo::value<std::string>(), "Plugin executable name")
         ("plugin-opts", bpo::value<std::string>(), "Plugin options")
+        ("dns-servers,d", bpo::value<std::string>(), "Override system dns servers")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
         ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
@@ -58,7 +59,7 @@ void ParseArgs(int argc, char *argv[],
         bpo::store(bpo::parse_config_file(ifs, desc), vm);
         bpo::notify(vm);
     }
-    
+
     uint16_t bind_port = vm["bind-port"].as<uint16_t>();
     boost::system::error_code ec;
     auto bind_address = boost::asio::ip::make_address(vm["bind-address"].as<std::string>(), ec);
@@ -81,6 +82,11 @@ void ParseArgs(int argc, char *argv[],
     if (!crypto_generator) {
         std::cerr << "Invalid cipher type!" << std::endl;
         exit(-1);
+    }
+
+    dns->clear();
+    if (vm.count("dns-servers")) {
+        (*dns) = vm["dns-servers"].as<std::string>();
     }
 
     udp->udp_enable = vm.count("udp-relay");

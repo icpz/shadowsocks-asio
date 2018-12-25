@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <boost/asio.hpp>
 
+#include <cares_service/cares.hxx>
+
 #include "protocol_hooks/basic_protocol.h"
 
 struct StreamServerArgs {
@@ -19,10 +21,11 @@ class __server_name : public std::enable_shared_from_this<__server_name> { \
     typedef boost::asio::ip::tcp tcp; \
     using ProtocolPtr = std::unique_ptr<BasicProtocol>; \
     using ProtocolGenerator = std::function<ProtocolPtr(void)>; \
+    using resolver_type = cares::tcp::resolver; \
 public: \
-    __server_name(boost::asio::io_context &ctx, StreamServerArgs args) \
+    __server_name(boost::asio::io_context &ctx, StreamServerArgs args, std::shared_ptr<resolver_type> resolver) \
         : acceptor_(ctx, std::move(args.bind_ep)), timeout_(args.timeout), \
-          protocol_generator_(std::move(args.generator)) { \
+          protocol_generator_(std::move(args.generator)), resolver_(resolver) { \
         LOG(INFO) << #__server_name " running at " << acceptor_.local_endpoint(); \
         running_ = true; \
         DoAccept(); \
@@ -51,6 +54,7 @@ private: \
     bool running_; \
     size_t timeout_; \
     ProtocolGenerator protocol_generator_; \
+    std::shared_ptr<resolver_type> resolver_; \
     std::unordered_map<__session_name *, std::weak_ptr<__session_name>> sessions_; \
 }
 
@@ -60,7 +64,7 @@ void __server_name::DoAccept() { \
         if (!ec) { \
             VLOG(1) << "A new client accepted: " << socket.remote_endpoint(); \
             std::shared_ptr<__session_name> session{ \
-                new __session_name(std::move(socket), protocol_generator_(), timeout_), \
+                new __session_name(std::move(socket), protocol_generator_(), resolver_, timeout_), \
                 std::bind(&__server_name::ReleaseSession, \
                           shared_from_this(), \
                           std::placeholders::_1) \

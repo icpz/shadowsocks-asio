@@ -77,7 +77,7 @@ void UdpRelayServer::DoResolveTarget(
         std::unique_ptr<Buffer> buf
     ) {
 
-    resolver_.async_resolve(
+    resolver_->async_resolve(
         host, port,
         [this, peer, buf{ std::move(buf) }, host]
         (bsys::error_code ec, resolver_type::results_type results) mutable {

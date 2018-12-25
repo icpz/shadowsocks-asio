@@ -15,8 +15,13 @@ namespace bsys = boost::system;
 class Session : public std::enable_shared_from_this<Session>,
                 public BasicStreamSession {
 public:
-    Session(tcp::socket socket, std::unique_ptr<BasicProtocol> protocol, size_t ttl = 5000)
-        : BasicStreamSession(std::move(socket), std::move(protocol), ttl) {
+    Session(
+        tcp::socket socket,
+        std::unique_ptr<BasicProtocol> protocol,
+        std::shared_ptr<resolver_type> resolver,
+        size_t ttl = 5000
+    )
+        : BasicStreamSession(std::move(socket), std::move(protocol), resolver, ttl) {
     }
 
     ~Session() {

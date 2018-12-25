@@ -11,7 +11,7 @@
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, Plugin *p) {
+void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, Plugin *p, std::string *dns) {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Shadowsocks Tunnel");
     desc.add_options()
@@ -26,6 +26,7 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
         ("config-file,c", bpo::value<std::string>(), "Configuration file")
         ("plugin", bpo::value<std::string>(), "Plugin executable name")
         ("plugin-opts", bpo::value<std::string>(), "Plugin options")
+        ("dns-servers,d", bpo::value<std::string>(), "Override system dns servers")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
         ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
@@ -126,6 +127,11 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
     if (!crypto_generator) {
         std::cerr << "Invalid cipher type!" << std::endl;
         exit(-1);
+    }
+
+    dns->clear();
+    if (vm.count("dns-servers")) {
+        (*dns) = vm["dns-servers"].as<std::string>();
     }
 
     args->generator = \

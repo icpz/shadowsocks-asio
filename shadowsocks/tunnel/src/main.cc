@@ -14,16 +14,24 @@ int main(int argc, char *argv[]) {
     int log_level;
     Plugin plugin;
     StreamServerArgs args;
+    std::string dns_servers;
 
-    ParseArgs(argc, argv, &log_level, &args, &plugin);
+    ParseArgs(argc, argv, &log_level, &args, &plugin, &dns_servers);
 
     InitialLogLevel(argv[0], log_level);
 
     boost::asio::io_context ctx;
 
-    std::shared_ptr<ForwardServer> tcp_server;
+    auto resolver = std::make_shared<cares::tcp::resolver>(ctx);
+    if (!dns_servers.empty()) {
+        boost::system::error_code ec;
+        resolver->set_servers(dns_servers, ec);
+        if (ec) {
+            throw ec;
+        }
+    }
 
-    tcp_server.reset(new ForwardServer(ctx, args));
+    auto tcp_server = std::make_shared<ForwardServer>(ctx, args, std::move(resolver));
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
 

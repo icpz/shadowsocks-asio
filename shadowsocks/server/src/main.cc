@@ -17,8 +17,9 @@ int main(int argc, char *argv[]) {
     Plugin plugin;
     StreamServerArgs args;
     UdpServerParam udp_param;
+    std::string dns_servers;
 
-    ParseArgs(argc, argv, &args, &log_level, &plugin, &udp_param);
+    ParseArgs(argc, argv, &args, &log_level, &plugin, &udp_param, &dns_servers);
 
     InitialLogLevel(argv[0], log_level);
 
@@ -29,10 +30,20 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<boost::process::child> plugin_process;
 
     if (udp_param.udp_only || udp_param.udp_enable) {
-        udp_server.reset(
-            new UdpRelayServer(ctx, udp_param.bind_ep,
-                               std::move(udp_param.crypto))
-        );
+        auto resolver = std::make_shared<cares::udp::resolver>(ctx);
+        if (!dns_servers.empty()) {
+            boost::system::error_code ec;
+            resolver->set_servers(dns_servers, ec);
+            if (ec) {
+                throw ec;
+            }
+        }
+        udp_server = \
+            std::make_shared<UdpRelayServer>(
+                ctx, udp_param.bind_ep,
+                std::move(udp_param.crypto),
+                std::move(resolver)
+            );
     }
 
     boost::asio::signal_set signals(ctx, SIGINT, SIGTERM);
@@ -42,7 +53,15 @@ int main(int argc, char *argv[]) {
 #endif
 
     if (!udp_param.udp_only) {
-        tcp_server.reset(new ForwardServer(ctx, args));
+        auto resolver = std::make_shared<cares::tcp::resolver>(ctx);
+        if (!dns_servers.empty()) {
+            boost::system::error_code ec;
+            resolver->set_servers(dns_servers, ec);
+            if (ec) {
+                throw ec;
+            }
+        }
+        tcp_server.reset(new ForwardServer(ctx, args, std::move(resolver)));
 
         plugin_process = StartPlugin(plugin,
             [&ctx, &tcp_server, &udp_server, &signals]() {

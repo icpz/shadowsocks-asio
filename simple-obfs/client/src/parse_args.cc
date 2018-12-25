@@ -11,7 +11,7 @@
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level, std::string *dns) {
     auto factory = ObfsGeneratorFactory::Instance();
     Obfuscator::ArgsType obfs_args;
     bpo::options_description desc("Simple Obfs Client");
@@ -24,6 +24,7 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
         ("obfs", bpo::value<std::string>(), "Obfuscate mode")
         ("obfs-host", bpo::value<std::string>(), "Obfuscate hostname")
         ("obfs-uri", bpo::value<std::string>()->default_value("/index.html"), "Obfuscate uri")
+        ("dns-servers,d", bpo::value<std::string>(), "Override system dns servers")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
         ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
@@ -130,6 +131,11 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
     Obfuscator::SetObfsArgs(obfs_args);
     args->bind_ep = tcp::endpoint(bind_address, bind_port);
     args->timeout = vm["timeout"].as<size_t>() * 1000;
+
+    dns->clear();
+    if (vm.count("dns-servers")) {
+        (*dns) = vm["dns-servers"].as<std::string>();
+    }
 
     auto remote_target = std::make_shared<TargetInfo>(MakeTarget(server_host, server_port));
     if (remote_target->IsEmpty()) {

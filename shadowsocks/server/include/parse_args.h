@@ -12,7 +12,7 @@
 void ParseArgs(int argc, char *argv[],
                StreamServerArgs *args,
                int *log_level, Plugin *plugin,
-               UdpServerParam *udp);
+               UdpServerParam *udp, std::string *dns);
 
 #endif
 

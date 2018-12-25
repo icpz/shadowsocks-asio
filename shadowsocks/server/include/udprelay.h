@@ -58,9 +58,10 @@ class UdpRelayServer : public std::enable_shared_from_this<UdpRelayServer> {
 public:
 
     UdpRelayServer(boost::asio::io_context &ctx, udp::endpoint ep,
-                   std::unique_ptr<CryptoContext> crypto)
+                   std::unique_ptr<CryptoContext> crypto,
+                   std::shared_ptr<resolver_type> resolver)
         : socket_(ctx, std::move(ep)),
-          resolver_(ctx),
+          resolver_(resolver),
           crypto_(std::move(crypto)) {
         running_ = true;
         LOG(INFO) << "running at " << ep;
@@ -93,7 +94,7 @@ private:
     std::array<uint8_t, 8192> buf_;
     udp::socket socket_;
     udp::endpoint sender_;
-    resolver_type resolver_;
+    std::shared_ptr<resolver_type> resolver_;
     std::unique_ptr<CryptoContext> crypto_;
     std::unordered_map<udp::endpoint, std::weak_ptr<UdpPeer>> targets_;
 };

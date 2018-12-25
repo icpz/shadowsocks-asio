@@ -7,7 +7,7 @@
 #include <protocol_hooks/basic_protocol.h>
 #include <protocol_hooks/basic_stream_server.h>
 
-void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level);
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level, std::string *dns);
 
 #endif
 

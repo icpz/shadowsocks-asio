@@ -15,8 +15,13 @@ namespace bsys = boost::system;
 class Session : public std::enable_shared_from_this<Session>,
                 public BasicStreamSession {
 public:
-    Session(tcp::socket socket, std::unique_ptr<BasicProtocol> protocol, size_t ttl = 5000)
-        : BasicStreamSession(std::move(socket), std::move(protocol), ttl) {
+    Session(
+        tcp::socket socket,
+        std::unique_ptr<BasicProtocol> protocol,
+        std::shared_ptr<resolver_type> resolver,
+        size_t ttl = 5000
+    )
+        : BasicStreamSession(std::move(socket), std::move(protocol), resolver, ttl) {
     }
 
     ~Session() {
@@ -159,7 +164,7 @@ private:
     void DoResolveRemote(std::string host, Port port) {
         auto self(shared_from_this());
         VLOG(2) << "Resolving to " << host << ":" << port;
-        resolver_.async_resolve(
+        resolver_->async_resolve(
             std::move(host), std::move(port),
             [this, self](bsys::error_code ec, resolver_type::results_type results) {
                 if (ec) {

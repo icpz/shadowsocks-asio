@@ -11,7 +11,7 @@
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level, std::string *dns) {
     auto factory = ObfsGeneratorFactory::Instance();
     Obfuscator::ArgsType obfs_args;
     bpo::options_description desc("Simple Obfs Server");
@@ -24,6 +24,7 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
         ("obfs", bpo::value<std::string>(), "Obfuscate mode")
         ("obfs-host", bpo::value<std::string>()->default_value(""), "Obfuscate hostname")
         ("obfs-forward", bpo::value<std::string>(), "Obfuscator forward option")
+        ("dns-servers,d", bpo::value<std::string>(), "Override system dns servers")
         ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
         ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
         ("help,h", "Print this help message");
@@ -135,6 +136,11 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level) {
     if (target_info->IsEmpty()) {
         std::cerr << "Invalid server host / port" << std::endl;
         exit(-1);
+    }
+
+    dns->clear();
+    if (vm.count("dns-servers")) {
+        (*dns) = vm["dns-servers"].as<std::string>();
     }
 
     args->generator = \

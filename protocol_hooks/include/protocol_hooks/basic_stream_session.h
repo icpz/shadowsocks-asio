@@ -18,10 +18,11 @@ protected:
 public:
     BasicStreamSession(tcp::socket socket,
                        std::unique_ptr<BasicProtocol> protocol,
+                       std::shared_ptr<resolver_type> resolver,
                        size_t ttl = 5000)
         : context_(socket.get_executor().context()),
           client_(std::move(socket), ttl), target_(context_, ttl),
-          resolver_(context_), protocol_(std::move(protocol)) {
+          resolver_(resolver), protocol_(std::move(protocol)) {
     }
 
     ~BasicStreamSession() = default;
@@ -30,7 +31,7 @@ public:
         VLOG(1) << "Closing: " << client_.socket.remote_endpoint();
         client_.CancelAll();
         target_.CancelAll();
-        resolver_.cancel();
+        resolver_->cancel();
     }
 
     std::string DumpToStr() const {
@@ -54,7 +55,7 @@ protected:
     template<typename Self, typename Port>
     void DoResolveTarget(Self self, std::string host, Port port, AfterConnected cb) {
         VLOG(2) << "Resolving to " << host << ":" << port;
-        resolver_.async_resolve(
+        resolver_->async_resolve(
             std::move(host), std::move(port),
             [this, self, cb = std::move(cb)]
             (boost::system::error_code ec, resolver_type::results_type results) {
@@ -163,7 +164,7 @@ protected:
             }
             client_.CancelAll();
             target_.CancelAll();
-            resolver_.cancel();
+            resolver_->cancel();
         }
     }
 
@@ -181,7 +182,7 @@ protected:
     boost::asio::io_context &context_;
     Peer client_;
     Peer target_;
-    resolver_type resolver_;
+    std::shared_ptr<resolver_type> resolver_;
     std::unique_ptr<BasicProtocol> protocol_;
 };
 
