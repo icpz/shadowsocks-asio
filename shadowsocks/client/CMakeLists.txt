@@ -24,6 +24,9 @@ set(DEPS
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${DEPS})
+if (WIN32)
+    target_link_options(${PROJECT_NAME} PRIVATE "LINKER:/FORCE:MULTIPLE")
+endif (WIN32)
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
