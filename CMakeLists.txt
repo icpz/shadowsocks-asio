@@ -20,12 +20,11 @@ else()
 endif()
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.65.0 REQUIRED COMPONENTS system filesystem program_options)
+find_package(Boost 1.67.0 REQUIRED COMPONENTS filesystem program_options)
 find_package(glog 0.3.4 REQUIRED)
 find_package(Threads REQUIRED)
 
 set(COMMON_DEPS
-    Boost::system
     glog::glog
     ${CMAKE_DL_LIBS}
    )
