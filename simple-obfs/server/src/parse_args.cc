@@ -5,6 +5,7 @@
 
 #include <obfs_utils/obfs.h>
 #include <obfs_utils/obfs_proto.h>
+#include <common_utils/options.h>
 
 #include "parse_args.h"
 
@@ -15,19 +16,12 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level, s
     auto factory = ObfsGeneratorFactory::Instance();
     Obfuscator::ArgsType obfs_args;
     bpo::options_description desc("Simple Obfs Server");
-    desc.add_options()
-        ("bind-address,b", bpo::value<std::string>()->default_value("::"), "Bind address")
-        ("bind-port,l", bpo::value<uint16_t>(),
-            "Specific port that server will listen")
+    desc.add(*GetCommonOptions()).add_options()
         ("server-address,s", bpo::value<std::string>(), "Server address")
         ("server-port,p", bpo::value<uint16_t>(), "Server port")
         ("obfs", bpo::value<std::string>(), "Obfuscate mode")
         ("obfs-host", bpo::value<std::string>()->default_value(""), "Obfuscate hostname")
-        ("obfs-forward", bpo::value<std::string>(), "Obfuscator forward option")
-        ("dns-servers,d", bpo::value<std::string>(), "Override system dns servers")
-        ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
-        ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
-        ("help,h", "Print this help message");
+        ("obfs-forward", bpo::value<std::string>(), "Obfuscator forward option");
 
     bpo::variables_map vm;
     bpo::store(bpo::parse_command_line(argc, argv, desc), vm);

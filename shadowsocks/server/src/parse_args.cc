@@ -5,6 +5,7 @@
 
 #include <crypto_utils/crypto.h>
 #include <ss_proto/server.h>
+#include <common_utils/options.h>
 
 #include "parse_args.h"
 #include "udprelay.h"
@@ -18,21 +19,13 @@ void ParseArgs(int argc, char *argv[],
                UdpServerParam *udp, std::string *dns) {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Shadowsocks Server");
-    desc.add_options()
-        ("bind-address,b", bpo::value<std::string>()->default_value("::"), "Bind address")
-        ("bind-port,l", bpo::value<uint16_t>()->default_value(58888),
-            "Specific port that server will listen")
+    desc.add(*GetCommonOptions()).add_options()
         ("method,m", bpo::value<std::string>(), "Cipher method")
         ("password,k", bpo::value<std::string>(), "Password")
-        ("config-file,c", bpo::value<std::string>(), "Configuration file")
         ("udp-relay,u", "Enable udp relay")
         ("udp-only,U", "Udp only")
         ("plugin", bpo::value<std::string>(), "Plugin executable name")
-        ("plugin-opts", bpo::value<std::string>(), "Plugin options")
-        ("dns-servers,d", bpo::value<std::string>(), "Override system dns servers")
-        ("verbose", bpo::value<int>()->default_value(1),"Verbose log")
-        ("timeout", bpo::value<size_t>()->default_value(60), "Timeout in seconds")
-        ("help,h", "Print this help message");
+        ("plugin-opts", bpo::value<std::string>(), "Plugin options");
 
     bpo::variables_map vm;
     bpo::store(bpo::parse_command_line(argc, argv, desc), vm);
