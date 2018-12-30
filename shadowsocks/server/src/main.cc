@@ -16,10 +16,10 @@ int main(int argc, char *argv[]) {
     int log_level;
     Plugin plugin;
     StreamServerArgs args;
+    ResolverArgs rargs;
     UdpServerParam udp_param;
-    std::string dns_servers;
 
-    ParseArgs(argc, argv, &args, &log_level, &plugin, &udp_param, &dns_servers);
+    ParseArgs(argc, argv, &args, &rargs, &log_level, &plugin, &udp_param);
 
     InitialLogLevel(argv[0], log_level);
 
@@ -31,9 +31,15 @@ int main(int argc, char *argv[]) {
 
     if (udp_param.udp_only || udp_param.udp_enable) {
         auto resolver = std::make_shared<cares::udp::resolver>(ctx);
-        if (!dns_servers.empty()) {
-            boost::system::error_code ec;
-            resolver->set_servers(dns_servers, ec);
+        boost::system::error_code ec;
+        if (!rargs.servers.empty()) {
+            resolver->set_servers(rargs.servers, ec);
+            if (ec) {
+                throw ec;
+            }
+        }
+        if (!rargs.mode.empty()) {
+            resolver->resolve_mode(rargs.mode, ec);
             if (ec) {
                 throw ec;
             }
@@ -54,9 +60,15 @@ int main(int argc, char *argv[]) {
 
     if (!udp_param.udp_only) {
         auto resolver = std::make_shared<cares::tcp::resolver>(ctx);
-        if (!dns_servers.empty()) {
-            boost::system::error_code ec;
-            resolver->set_servers(dns_servers, ec);
+        boost::system::error_code ec;
+        if (!rargs.servers.empty()) {
+            resolver->set_servers(rargs.servers, ec);
+            if (ec) {
+                throw ec;
+            }
+        }
+        if (!rargs.mode.empty()) {
+            resolver->resolve_mode(rargs.mode, ec);
             if (ec) {
                 throw ec;
             }

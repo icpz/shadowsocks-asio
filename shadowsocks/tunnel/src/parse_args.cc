@@ -5,14 +5,14 @@
 
 #include <crypto_utils/crypto.h>
 #include <ss_proto/tunnel.h>
-#include <common_utils/options.h>
 
 #include "parse_args.h"
 
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, Plugin *p, std::string *dns) {
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args,
+               ResolverArgs *rargs, int *log_level, Plugin *p) {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Shadowsocks Tunnel");
     desc.add(*GetCommonOptions()).add_options()
@@ -122,10 +122,7 @@ void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, P
         exit(-1);
     }
 
-    dns->clear();
-    if (vm.count("dns-servers")) {
-        (*dns) = vm["dns-servers"].as<std::string>();
-    }
+    GetResolverArgs(vm, rargs);
 
     args->generator = \
         [target = std::move(remote_target), g = *crypto_generator]() {

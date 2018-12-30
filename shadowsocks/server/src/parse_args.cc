@@ -5,7 +5,6 @@
 
 #include <crypto_utils/crypto.h>
 #include <ss_proto/server.h>
-#include <common_utils/options.h>
 
 #include "parse_args.h"
 #include "udprelay.h"
@@ -13,10 +12,8 @@
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-void ParseArgs(int argc, char *argv[],
-               StreamServerArgs *args,
-               int *log_level, Plugin *p,
-               UdpServerParam *udp, std::string *dns) {
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args, ResolverArgs *rargs,
+               int *log_level, Plugin *p, UdpServerParam *udp) {
     auto factory = CryptoContextGeneratorFactory::Instance();
     bpo::options_description desc("Shadowsocks Server");
     desc.add(*GetCommonOptions()).add_options()
@@ -77,10 +74,7 @@ void ParseArgs(int argc, char *argv[],
         exit(-1);
     }
 
-    dns->clear();
-    if (vm.count("dns-servers")) {
-        (*dns) = vm["dns-servers"].as<std::string>();
-    }
+    GetResolverArgs(vm, rargs);
 
     udp->udp_enable = vm.count("udp-relay");
     udp->udp_only = vm.count("udp-only");

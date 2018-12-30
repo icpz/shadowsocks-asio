@@ -6,8 +6,10 @@
 #include <protocol_hooks/basic_protocol.h>
 #include <protocol_hooks/basic_stream_server.h>
 #include <plugin_utils/plugin.h>
+#include <common_utils/options.h>
 
-void ParseArgs(int argc, char *argv[], int *log_level, StreamServerArgs *args, Plugin *plugin, std::string *dns);
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args,
+               ResolverArgs *rargs, int *log_level, Plugin *plugin);
 
 #endif
 

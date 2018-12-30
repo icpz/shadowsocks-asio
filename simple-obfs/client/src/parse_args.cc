@@ -5,14 +5,13 @@
 
 #include <obfs_utils/obfs.h>
 #include <obfs_utils/obfs_proto.h>
-#include <common_utils/options.h>
 
 #include "parse_args.h"
 
 namespace bpo = boost::program_options;
 using boost::asio::ip::tcp;
 
-void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level, std::string *dns) {
+void ParseArgs(int argc, char *argv[], StreamServerArgs *args, ResolverArgs *rargs, int *log_level) {
     auto factory = ObfsGeneratorFactory::Instance();
     Obfuscator::ArgsType obfs_args;
     bpo::options_description desc("Simple Obfs Client");
@@ -126,10 +125,7 @@ void ParseArgs(int argc, char *argv[], StreamServerArgs *args, int *log_level, s
     args->bind_ep = tcp::endpoint(bind_address, bind_port);
     args->timeout = vm["timeout"].as<size_t>() * 1000;
 
-    dns->clear();
-    if (vm.count("dns-servers")) {
-        (*dns) = vm["dns-servers"].as<std::string>();
-    }
+    GetResolverArgs(vm, rargs);
 
     auto remote_target = std::make_shared<TargetInfo>(MakeTarget(server_host, server_port));
     if (remote_target->IsEmpty()) {
