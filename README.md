@@ -4,7 +4,7 @@
 
 This is a simple port of shadowsocks.
 
-*I'm a little busy these days... Will be back at Sept.*
+* Pause for being busy...
 
 ## Build from source
 
@@ -115,18 +115,11 @@ make install
 
 ## TODO
 
-- ~~ss-server~~ (done)
-- ~~stream ciphers~~ (done)
 - friendly help message
-- ~~cross-platform support~~ (done)
 - udp relay (current only available for ss-server)
-- ~~obfs plugin~~ (done)
-- ~~http obfs, uri support~~ (done)
-- ~~session management~~ (done)
 - replace boost::program_options with gflags
-- more obfuscator
-- ~~tunnel~~ (done)
-- obfs failover
+- ss-redir
+- reconstruction
 
 ## License
 
